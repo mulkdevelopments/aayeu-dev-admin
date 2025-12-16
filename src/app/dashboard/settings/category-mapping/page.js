@@ -146,6 +146,7 @@ const CategoryManager = () => {
     const { data, error } = await ourCategoriesRequest({
       method: "GET",
       url: "/admin/get-our-categories",
+      authRequired: true,
     });
     if (error) return showToast("Failed to fetch our categories", "error");
     setOurCategories(data?.data || []);
@@ -155,6 +156,7 @@ const CategoryManager = () => {
     const { data, error } = await vendorCategoriesRequest({
       method: "GET",
       url: "/admin/get-category-for-mappings",
+      authRequired: true,
       params: { vendorId },
     });
     if (error) return showToast("Failed to fetch vendor categories", "error");
@@ -165,6 +167,7 @@ const CategoryManager = () => {
     const { data, error } = await mappedCategoriesRequest({
       method: "GET",
       url: `/admin/get-mapped-categories`,
+      authRequired: true,
       params: { vendorId },
     });
     if (error) return showToast("Failed to fetch mapped categories", "error");
@@ -176,6 +179,7 @@ const CategoryManager = () => {
     const { data, error } = await vendorListRequest({
       method: "GET",
       url: "/admin/get-vendor-list",
+      authRequired: true,
     });
     if (error) return showToast("Failed to fetch vendors", "error");
 
@@ -246,9 +250,10 @@ const CategoryManager = () => {
     if (payload.vendor_category_id.length === 0)
       return showToast("Please select at least one Vendor Category", "error");
 
-    const { data , error } = await ourCategoriesRequest({
+    const { data, error } = await ourCategoriesRequest({
       method: "POST",
       url: "/admin/map-vendor-category",
+      authRequired: true,
       payload,
     });
     if (error)
@@ -257,7 +262,7 @@ const CategoryManager = () => {
         "error"
       );
 
-   if(data.success) showToast("success", data.message);
+    if (data.success) showToast("success", data.message);
 
     setCheckedOurCategories([]);
     setCheckedVendorCategories([]);

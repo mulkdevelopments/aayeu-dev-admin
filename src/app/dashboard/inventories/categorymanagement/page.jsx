@@ -72,6 +72,7 @@ const CategoryManagement = () => {
       const { data, error } = await request({
         method: "GET",
         url: "/admin/get-categories",
+        authRequired: true,
       });
       if (error) throw new Error(error.message);
 
@@ -273,7 +274,7 @@ const CategoryManagement = () => {
             </SelectContent>
           </Select>
         </div>
-{/* 
+        {/* 
         {filterType === "our" && (
           <div className="w-full sm:w-56 flex items-end">
             <Button

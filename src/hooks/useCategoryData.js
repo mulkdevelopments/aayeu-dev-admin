@@ -23,6 +23,7 @@ export const useCategoryData = (selectedVendorId) => {
     const { data, error } = await api({
       method: "GET",
       url: "/admin/get-our-categories",
+      authRequired: true,
     });
     if (error) return showToast("Failed to fetch our categories", "error");
     setOurCategories(data?.data || []);
@@ -32,6 +33,7 @@ export const useCategoryData = (selectedVendorId) => {
     const { data: vData, error: vErr } = await api({
       method: "GET",
       url: "/admin/get-category-for-mappings",
+      authRequired: true,
       params: { vendorId: selectedVendorId },
     });
     if (vErr) return showToast("Failed to fetch vendor categories", "error");
@@ -51,6 +53,7 @@ export const useCategoryData = (selectedVendorId) => {
     const { data, error } = await api({
       method: "GET",
       url: "/admin/get-mapped-categories",
+      authRequired: true,
       params: { vendorId: selectedVendorId },
     });
     if (error) return showToast("Failed to fetch mapped categories", "error");
@@ -61,6 +64,7 @@ export const useCategoryData = (selectedVendorId) => {
     const { data, error } = await api({
       method: "GET",
       url: "/admin/get-vendor-list",
+      authRequired: true,
     });
     if (error) return showToast("Failed to fetch vendors", "error");
     const ids = [
