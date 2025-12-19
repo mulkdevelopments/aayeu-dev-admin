@@ -47,6 +47,7 @@ export default function InventoryPage() {
   const [brands, setBrands] = useState([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
+  const [jumpToPage, setJumpToPage] = useState("");
 
   const [state, setState] = useState({
     searchValue: "",
@@ -64,6 +65,7 @@ export default function InventoryPage() {
       minPrice: "",
       maxPrice: "",
       vendorId: "",
+      mappingStatus: "all", // all, mapped, unmapped
     },
   });
 
@@ -145,9 +147,13 @@ export default function InventoryPage() {
         brand: "all",
         minPrice: "",
         maxPrice: "",
+        vendorId: "all",
+        mappingStatus: "all",
       },
       currentPage: 1,
     }));
+    setLocalMin("");
+    setLocalMax("");
   };
 
   // Debounced state update for API / filters
@@ -422,7 +428,7 @@ export default function InventoryPage() {
           Clear Filters
         </Button>
 
-        {/* Vendor Dropdown (right of Clear Filters) */}
+        {/* Vendor Dropdown */}
         <Select
           value={state.filters.vendorId}
           onValueChange={(value) =>
@@ -449,6 +455,27 @@ export default function InventoryPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Mapping Status Filter */}
+        <Select
+          value={state.filters.mappingStatus}
+          onValueChange={(value) =>
+            setState((prev) => ({
+              ...prev,
+              filters: { ...prev.filters, mappingStatus: value },
+              currentPage: 1,
+            }))
+          }
+        >
+          <SelectTrigger className="w-full sm:w-[180px] md:w-[160px] lg:w-[180px]">
+            <SelectValue placeholder="Mapping Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Products</SelectItem>
+            <SelectItem value="mapped">Mapped Only</SelectItem>
+            <SelectItem value="unmapped">Not Mapped Only</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -465,6 +492,7 @@ export default function InventoryPage() {
                 <TableHead>Our Price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Mapping</TableHead>
                 <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -499,6 +527,9 @@ export default function InventoryPage() {
                       <Skeleton className="mx-auto h-6 w-16 rounded-md" />
                     </TableCell>
                     <TableCell className="text-center">
+                      <Skeleton className="mx-auto h-6 w-16 rounded-md" />
+                    </TableCell>
+                    <TableCell className="text-center">
                       <Skeleton className="mx-auto h-8 w-8 rounded-md" />
                     </TableCell>
                   </TableRow>
@@ -506,7 +537,15 @@ export default function InventoryPage() {
 
               {/* -------------- SHOW PRODUCTS AFTER LOADING -------------- */}
               {!loading &&
-                products.map((product) => {
+                products
+                  .filter((product) => {
+                    // Client-side filter for mapping status
+                    const isMapped = product.mapped_category || product.mapped_categories?.length > 0;
+                    if (state.filters.mappingStatus === "mapped") return isMapped;
+                    if (state.filters.mappingStatus === "unmapped") return !isMapped;
+                    return true; // "all"
+                  })
+                  .map((product) => {
                   const categoryNames =
                     product.categories?.map((cat) => cat.name).join(", ") ||
                     "-";
@@ -558,6 +597,24 @@ export default function InventoryPage() {
                       </TableCell>
 
                       <TableCell className="text-center">
+                        {product.mapped_category || product.mapped_categories?.length > 0 ? (
+                          <Badge
+                            variant="success"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            Mapped
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="destructive"
+                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                          >
+                            Not Mapped
+                          </Badge>
+                        )}
+                      </TableCell>
+
+                      <TableCell className="text-center">
                         <Link
                           href={`/dashboard/inventories/viewproduct?id=${product.id}`}
                           target="_blank"
@@ -573,28 +630,90 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* Enhanced Pagination */}
       {totalPages >= 0 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            className="cursor-pointer"
-            variant="outline"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            Prev
-          </Button>
-          <span className="px-3 py-2">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            className="cursor-pointer"
-            variant="outline"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            Next
-          </Button>
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
+          {/* First and Previous Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+              title="First page"
+            >
+              «
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Prev
+            </Button>
+          </div>
+
+          {/* Page Info and Jump */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <span className="text-gray-400">|</span>
+            <Input
+              type="number"
+              min="1"
+              max={totalPages}
+              placeholder="Go to"
+              value={jumpToPage}
+              onChange={(e) => setJumpToPage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const page = parseInt(jumpToPage);
+                  if (page >= 1 && page <= totalPages) {
+                    setCurrentPage(page);
+                    setJumpToPage("");
+                  }
+                }
+              }}
+              className="w-20 h-8 text-center"
+            />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                const page = parseInt(jumpToPage);
+                if (page >= 1 && page <= totalPages) {
+                  setCurrentPage(page);
+                  setJumpToPage("");
+                }
+              }}
+              disabled={!jumpToPage || parseInt(jumpToPage) < 1 || parseInt(jumpToPage) > totalPages}
+            >
+              Go
+            </Button>
+          </div>
+
+          {/* Next and Last Buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+              title="Last page"
+            >
+              »
+            </Button>
+          </div>
         </div>
       )}
     </div>

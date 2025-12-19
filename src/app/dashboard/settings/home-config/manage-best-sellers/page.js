@@ -271,7 +271,7 @@ const handleSubmit = async (e) => {
     const endpoint = isEdit ? "/admin/update-best-seller" : "/admin/add-best-seller";
     const method = isEdit ? "PUT" : "POST";
      console.log("Payload is ",payload)
-    const { data, error } = await request({ method, url: endpoint, payload });
+    const { data, error } = await request({ method, url: endpoint, payload, authRequired: true });
 
     if (error) { showToast("error", "Failed to add/update best seller"); return; }
     showToast("success", `Best Seller ${isEdit ? "updated" : "added"} successfully!`);
