@@ -80,7 +80,7 @@ export default function useFileUpload({
         data: formData,
         headers: {
           ...(authRequired && authUser?.token
-            ? { Authorization: `${authUser.token}` }
+            ? { Authorization: `Bearer ${authUser.token}` }
             : {}),
         },
         onUploadProgress: (event) => {

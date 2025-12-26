@@ -283,18 +283,17 @@ export default function VendorPage() {
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
                           <Badge
-                            className={ 
+                            className={
                               status === "Active"
                                 ? "bg-green-600 hover:bg-green-700"
                                 : "bg-red-600 hover:bg-red-700"
                             }
                           >
                             {status}
-
                           </Badge>
 
                           {/* 3-dot Dropdown Menu */}
-                          {/* <DropdownMenu>
+                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
                                 <MoreHorizontal className="h-4 w-4" />
@@ -303,12 +302,12 @@ export default function VendorPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() => {
-                                  if (status !== "active") {
+                                  if (status !== "Active") {
                                     updateVendorStatus(vendor.id, "active");
                                   }
                                 }}
                                 className={
-                                  status === "active"
+                                  status === "Active"
                                     ? "font-bold bg-accent"
                                     : ""
                                 }
@@ -320,12 +319,12 @@ export default function VendorPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
-                                  if (status !== "inactive") {
+                                  if (status !== "Inactive") {
                                     updateVendorStatus(vendor.id, "inactive");
                                   }
                                 }}
                                 className={
-                                  status === "inactive"
+                                  status === "Inactive"
                                     ? "font-bold bg-accent"
                                     : ""
                                 }
@@ -336,7 +335,7 @@ export default function VendorPage() {
                                 </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
-                          </DropdownMenu> */}
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                       {/* <TableCell className="text-right">

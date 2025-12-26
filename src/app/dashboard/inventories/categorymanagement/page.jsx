@@ -80,15 +80,8 @@ const CategoryManagement = () => {
       setAllCategories(fetched);
       setCategories(fetched);
 
-      const allIds = [];
-      fetched.forEach((p) => {
-        allIds.push(p.id);
-        p.children?.forEach((c) => {
-          allIds.push(c.id);
-          c.children?.forEach((s) => allIds.push(s.id));
-        });
-      });
-      setOpenIds(allIds);
+      // Start with all categories collapsed (empty array)
+      setOpenIds([]);
     } catch (err) {
       showToast("error", err?.message || "Something went wrong");
     } finally {
@@ -120,6 +113,28 @@ const CategoryManagement = () => {
   };
 
   const triggerRefresh = () => setRefresh((prev) => !prev);
+
+  // Expand all or collapse all categories
+  const toggleExpandAll = () => {
+    if (openIds.length > 0) {
+      // Collapse all
+      setOpenIds([]);
+    } else {
+      // Expand all - collect all IDs recursively
+      const collectAllIds = (categories) => {
+        const ids = [];
+        const traverse = (cat) => {
+          if (cat?.id) ids.push(cat.id);
+          if (cat?.children) {
+            cat.children.forEach(traverse);
+          }
+        };
+        categories.forEach(traverse);
+        return ids;
+      };
+      setOpenIds(collectAllIds(categories));
+    }
+  };
 
   const formatName = (name) =>
     name
@@ -156,6 +171,7 @@ const CategoryManagement = () => {
         data: payload,      // axios-style
         payload,            // custom hook style (sometimes used)
         body: payload,      // fetch-style fall-back
+        authRequired: true,
       });
 
       if (error) throw new Error(error.message);
@@ -231,6 +247,56 @@ const CategoryManagement = () => {
     );
   };
 
+  // Recursive category renderer supporting unlimited depth (up to 5 levels displayed)
+  const renderCategory = (category, level = 0) => {
+    const hasChildren = category.children && category.children.length > 0;
+    const isOpen = openIds.includes(category.id);
+    const paddingLeft = `${level * 20}px`;
+
+    // Background color based on level (alternating pattern)
+    const bgColor = level === 0 ? "bg-gray-50" : level === 1 ? "bg-gray-100" : "bg-white";
+    const fontWeight = level === 0 ? "font-bold" : level === 1 ? "font-medium" : "font-normal";
+
+    return (
+      <React.Fragment key={category.id}>
+        <TableRow
+          className={`${fontWeight} ${bgColor} ${hasChildren ? "cursor-pointer" : ""}`}
+          onClick={() => hasChildren && toggleRow(category.id)}
+        >
+          <TableCell style={{ paddingLeft }}>
+            <span className="inline-flex items-center">
+              {hasChildren && (
+                <ChevronRight
+                  size={16}
+                  className={`mr-2 transition-transform duration-150 ${
+                    isOpen ? "rotate-90" : "rotate-0"
+                  }`}
+                />
+              )}
+              {!hasChildren && <span className="w-6 inline-block" />}
+              {formatName(category.name)}
+            </span>
+          </TableCell>
+          <TableCell>{category.slug}</TableCell>
+          <TableCell>{category.is_active ? "Yes" : "No"}</TableCell>
+          <TableCell>
+            {renderActions(
+              category,
+              (e) => {
+                if (hasChildren) e.stopPropagation();
+                setEditCategory(category);
+              },
+              hasChildren
+            )}
+          </TableCell>
+        </TableRow>
+
+        {/* Recursively render children */}
+        {hasChildren && isOpen && category.children.map((child) => renderCategory(child, level + 1))}
+      </React.Fragment>
+    );
+  };
+
   return (
     <div className="p-4">
       <CustomBreadcrumb />
@@ -241,6 +307,15 @@ const CategoryManagement = () => {
         </h1>
 
         <div className="flex gap-3 w-full justify-end">
+          <div className="w-full lg:w-44 bg-gray-200 rounded-2xl">
+            <Button
+              className="w-full bg-gray-600 hover:bg-gray-700"
+              onClick={toggleExpandAll}
+              variant="secondary"
+            >
+              {openIds.length > 0 ? "Collapse All" : "Expand All"}
+            </Button>
+          </div>
           <div className="w-full lg:w-40 bg-amber-600 rounded-2xl">
             <Button className="w-full" onClick={triggerRefresh}>
               Refresh
@@ -324,87 +399,7 @@ const CategoryManagement = () => {
             </TableHeader>
 
             <TableBody>
-              {categories.map((parent) => (
-                <React.Fragment key={parent.id}>
-                  {/* Level 0 */}
-                  <TableRow
-                    className="font-bold bg-gray-50 cursor-pointer"
-                    onClick={() => toggleRow(parent.id)}
-                  >
-                    <TableCell style={{ paddingLeft: "0px" }}>
-                      <span className="inline-flex items-center">
-                        <ChevronRight
-                          size={16}
-                          className={`mr-2 transition-transform duration-150 ${openIds.includes(parent.id) ? "rotate-90" : "rotate-0"
-                            }`}
-                        />
-                        {parent.name}
-                      </span>
-                    </TableCell>
-                    <TableCell>{parent.slug}</TableCell>
-                    <TableCell>{parent.is_active ? "Yes" : "No"}</TableCell>
-                    <TableCell>
-                      {renderActions(
-                        parent,
-                        (e) => {
-                          e.stopPropagation();
-                          setEditCategory(parent);
-                        },
-                        true
-                      )}
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Level 1 */}
-                  {openIds.includes(parent.id) &&
-                    parent.children?.map((child) => (
-                      <React.Fragment key={child.id}>
-                        <TableRow
-                          className="font-medium bg-gray-100 cursor-pointer"
-                          onClick={() => toggleRow(child.id)}
-                        >
-                          <TableCell style={{ paddingLeft: "20px" }}>
-                            <span className="inline-flex items-center">
-                              <ChevronRight
-                                size={16}
-                                className={`mr-2 transition-transform duration-150 ${openIds.includes(child.id) ? "rotate-90" : "rotate-0"
-                                  }`}
-                              />
-                              {child.name}
-                            </span>
-                          </TableCell>
-                          <TableCell>{child.slug}</TableCell>
-                          <TableCell>{child.is_active ? "Yes" : "No"}</TableCell>
-                          <TableCell>
-                            {renderActions(
-                              child,
-                              (e) => {
-                                e.stopPropagation();
-                                setEditCategory(child);
-                              },
-                              true
-                            )}
-                          </TableCell>
-                        </TableRow>
-
-                        {/* Level 2 */}
-                        {openIds.includes(child.id) &&
-                          child.children?.map((sub) => (
-                            <TableRow key={sub.id} className="font-normal bg-white">
-                              <TableCell style={{ paddingLeft: "40px" }}>
-                                {formatName(sub.name)}
-                              </TableCell>
-                              <TableCell>{sub.slug}</TableCell>
-                              <TableCell>{sub.is_active ? "Yes" : "No"}</TableCell>
-                              <TableCell>
-                                {renderActions(sub, () => setEditCategory(sub), false)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </React.Fragment>
-                    ))}
-                </React.Fragment>
-              ))}
+              {categories.map((category) => renderCategory(category))}
             </TableBody>
           </Table>
         )}

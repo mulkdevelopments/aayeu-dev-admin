@@ -15,6 +15,10 @@ import {
   Boxes,
   BarChart3,
   Settings,
+  FolderTree,
+  Plug,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -43,6 +47,21 @@ const sidebarRoutes = [
     label: "Inventory",
     path: ROUTE_PATH.DASHBOARD.INVENTORIES,
     icon: <Boxes size={18} />,
+  },
+  {
+    label: "Category Management",
+    path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
+    icon: <FolderTree size={18} />,
+  },
+  {
+    label: "Plugins",
+    icon: <Plug size={18} />,
+    subItems: [
+      {
+        label: "Luxury Distribution",
+        path: ROUTE_PATH.DASHBOARD.PLUGINS_LUXURY_DISTRIBUTION,
+      }
+    ]
   },
   // {
   //   label: "Reports",
@@ -81,7 +100,16 @@ export default function Sidebar({ isOpen, onClose }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const modalRef = useRef(null);
   const [activeRoute, setActiveRoute] = useState(pathname);
+  const [expandedItems, setExpandedItems] = useState([]);
   const { handleLogout } = useLogout();
+
+  const toggleExpand = (label) => {
+    setExpandedItems(prev =>
+      prev.includes(label)
+        ? prev.filter(item => item !== label)
+        : [...prev, label]
+    );
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -125,7 +153,7 @@ export default function Sidebar({ isOpen, onClose }) {
       >
         {/* Top Logo */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-300">
-          <h1 className="font-bold text-lg text-gray-900">Aayeu</h1>
+          <h1 className="font-bold text-lg text-gray-900">Admin</h1>
           <Button
             className="sm:hidden text-slate-200 bg-red-700 rounded-full"
             onClick={onClose}
@@ -137,24 +165,70 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Navigation */}
         <nav className="mt-4 space-y-2 space-x-6 px-2 flex-1">
           {sidebarRoutes.map((item) => (
-            <Link
-              key={item.path}
-              href={item.path}
-              onClick={(e) => {
-                // prevent default Link behaviour and explicitly navigate to clear any query params
-                e.preventDefault();
-                setActiveRoute(item.path); // mark active
-                onClose?.(); // close sidebar on mobile
-                router.push(item.path);
-              }}
-              className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeRoute === item.path ? "bg-yellow-600 text-white" : "text-black hover:bg-gray-300"
-                }`}
-            >
-              <span className="mr-3">{item.icon}</span>
-              {item.label}
-            </Link>
+            <div key={item.path || item.label}>
+              {item.subItems ? (
+                // Item with sub-items (collapsible)
+                <div>
+                  <button
+                    onClick={() => toggleExpand(item.label)}
+                    className="flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium transition-colors text-black hover:bg-gray-300"
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-3">{item.icon}</span>
+                      {item.label}
+                    </div>
+                    {expandedItems.includes(item.label) ? (
+                      <ChevronDown size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )}
+                  </button>
+                  {expandedItems.includes(item.label) && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => (
+                        <Link
+                          key={subItem.path}
+                          href={subItem.path}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setActiveRoute(subItem.path);
+                            onClose?.();
+                            router.push(subItem.path);
+                          }}
+                          className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                            activeRoute === subItem.path
+                              ? "bg-yellow-600 text-white"
+                              : "text-black hover:bg-gray-300"
+                          }`}
+                        >
+                          {subItem.label}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Regular item without sub-items
+                <Link
+                  href={item.path}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setActiveRoute(item.path);
+                    onClose?.();
+                    router.push(item.path);
+                  }}
+                  className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeRoute === item.path
+                      ? "bg-yellow-600 text-white"
+                      : "text-black hover:bg-gray-300"
+                  }`}
+                >
+                  <span className="mr-3">{item.icon}</span>
+                  {item.label}
+                </Link>
+              )}
+            </div>
           ))}
-
         </nav>
 
 

@@ -57,7 +57,7 @@ export default function Navbar({ onToggleSidebar }) {
 
         {/* Right section */}
         <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0 relative">
-          <Bell className="h-5 w-5 text-black cursor-pointer" />
+          {/* <Bell className="h-5 w-5 text-black cursor-pointer" /> */}
 
           {/* Profile */}
           <div

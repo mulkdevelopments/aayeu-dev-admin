@@ -192,16 +192,14 @@ export default function InventoryPage() {
           method: "GET",
           url: "/admin/get-vendor-list",
           authRequired: true,
+          params: {
+            status: "active", // ✅ Only fetch active vendors
+          },
         });
         if (error) throw new Error(error?.message || error);
         const list = data?.data?.vendors || [];
-        const allowed = new Set([
-          "a6bdd96b-0e2c-4f3e-b644-4e088b1778e0",
-          "b34fd0f6-815a-469e-b7c2-73f9e8afb3ed",
-          "65053474-4e40-44ee-941c-ef5253ea9fc9",
-        ]);
-        const onlyTwo = list.filter((v) => allowed.has(v.id));
-        setVendors(onlyTwo);
+        // ✅ Show ALL active vendors (removed hardcoded filter)
+        setVendors(list);
       } catch (err) {
         showToast("error", err.message || "Failed to load vendors");
       } finally {
