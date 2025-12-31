@@ -91,6 +91,7 @@ export default function CouponsPage() {
       const res = await ourCouponsRequest({
         method: "GET",
         url,
+        authRequired: true,
       });
 
       const data = res.data?.data;
