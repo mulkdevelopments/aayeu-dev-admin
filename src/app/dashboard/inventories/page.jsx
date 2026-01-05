@@ -487,7 +487,9 @@ export default function InventoryPage() {
                 <TableHead>Category</TableHead>
                 <TableHead>Brand</TableHead>
                 <TableHead>Gender</TableHead>
-                <TableHead>Our Price</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Vendor </TableHead>
+                <TableHead>Markup %</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Mapping</TableHead>
@@ -517,6 +519,12 @@ export default function InventoryPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-16" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="mx-auto h-4 w-16" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="mx-auto h-4 w-12" />
                     </TableCell>
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-12" />
@@ -576,7 +584,21 @@ export default function InventoryPage() {
                       <TableCell>{product.gender || "-"}</TableCell>
 
                       <TableCell className="text-center">
-                        {variant.sale_price || "-"}
+                        {variant.price ? `€${variant.price}` : "-"}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        {variant.vendorsaleprice || variant.vendor_sale_price
+                          ? `€${variant.vendorsaleprice || variant.vendor_sale_price}`
+                          : "-"}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <span className="font-semibold text-blue-600">
+                          {variant.price && variant.vendorsaleprice && variant.vendorsaleprice > 0
+                            ? `${(((variant.price / variant.vendorsaleprice) - 1) * 100).toFixed(2)}%`
+                            : "0.00%"}
+                        </span>
                       </TableCell>
 
                       <TableCell className="text-center">

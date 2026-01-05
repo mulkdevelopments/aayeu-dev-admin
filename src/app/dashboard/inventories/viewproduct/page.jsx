@@ -46,7 +46,8 @@ const ViewProduct = () => {
 
       if (data?.success) {
         setProduct(data.data);
-        // showToast("success", data.message);
+        console.log("Fetched product data:", data.data);
+        showToast("success", data.message);
       }
     } catch (err) {
       console.error("API Error:", err);
@@ -171,11 +172,12 @@ const ViewProduct = () => {
     setPriceLoading(prev => ({ ...prev, [key]: true }));
 
     try {
+      // Handle mrp and price
       const { data, error } = await request({
         method: "PATCH",
         url: "/admin/update-product-price",
         payload: {
-          type: type === "mrp" ? "mrp" : "sale_price",
+          type: type, // either "mrp" or "price"
           price: parseFloat(newPrice),
           product_id: product.id,
           varient_id: variantId,
@@ -189,7 +191,7 @@ const ViewProduct = () => {
 
       // Refresh product data
       await fetchProduct();
-      
+
       // Exit edit mode
       setEditingPrice(prev => {
         const newState = { ...prev };
@@ -310,8 +312,8 @@ const ViewProduct = () => {
             <div className="flex flex-wrap gap-4">
               <p className="text-black"><strong>Category:</strong> {product.categories?.[0]?.name || "N/A"}</p>
               <p className="text-black"><strong>Brand:</strong> {product.brand_name || "N/A"}</p>
-              <p className="text-black"><strong>Min Price:</strong> AED{product.min_price || "N/A"}</p>
-              <p className="text-black"><strong>Max Price:</strong> AED{product.max_price || "N/A"}</p>
+              {/* <p className="text-black"><strong>Min Price:</strong> €{product.min_price || "N/A"}</p>
+              <p className="text-black"><strong>Max Price:</strong> €{product.max_price || "N/A"}</p> */}
               <p className="text-black"><strong>Stock (first variant):</strong> {product.variants?.[0]?.stock || "N/A"}</p>
               <p className="text-black"><strong>Country:</strong> {product.country_of_origin || "N/A"}</p>
             </div>
@@ -441,16 +443,16 @@ const ViewProduct = () => {
                   <thead className="bg-yellow-600 text-white">
                     <tr>
                       <th rowSpan={2} className="px-3 py-2 border">SKU</th>
-                      <th colSpan={2} className="px-3 py-2 border">Aayeu Price</th>
-                      <th colSpan={2} className="px-3 py-2 border">Vendor Price</th>
-                      <th rowSpan={2} className="px-3 py-2 border">Price Difference %</th>
+                      <th colSpan={2} className="px-3 py-2 border bg-black">Aayeu</th>
+                      <th colSpan={2} className="px-3 py-2 border bg-gray-800">Vendor</th>
+                      <th rowSpan={2} className="px-3 py-2 border">Markup %</th>
                       <th colSpan={3} className="px-3 py-2 border">Variants</th>
                     </tr>
                     <tr>
-                      <th className="px-3 py-2 border">Our MRP</th>
-                      <th className="px-3 py-2 border">Our Sale Price</th>
-                      <th className="px-3 py-2 border">Vendor MRP</th>
-                      <th className="px-3 py-2 border">Vendor Sale Price</th>
+                      <th className="px-3 py-2 border bg-black">MRP</th>
+                      <th className="px-3 py-2 border bg-black">Price</th>
+                      <th className="px-3 py-2 border bg-gray-700">MRP</th>
+                      <th className="px-3 py-2 border bg-gray-600">price</th>
                       <th className="px-3 py-2 border">Variant Color</th>
                       <th className="px-3 py-2 border">Variant Size</th>
                       <th className="px-3 py-2 border">Stock</th>
@@ -458,19 +460,17 @@ const ViewProduct = () => {
                   </thead>
                   <tbody>
                     {product.variants.map((v) => {
-                      const ourSalePrice = parseFloat(v.sale_price) || 0;
-                      const vendorSalePrice = parseFloat(v.vendor_sale_price) || 0;
-                      const difference = ourSalePrice - vendorSalePrice;
-                      const percentageDiff = vendorSalePrice > 0 
-                        ? ((difference / vendorSalePrice) * 100).toFixed(2)
-                        : "0.00";
-                      
                       const mrpKey = `${v.id}_mrp`;
-                      const salePriceKey = `${v.id}_sale_price`;
+                      const priceKey = `${v.id}_price`;
                       const isEditingMrp = editingPrice[mrpKey];
-                      const isEditingSalePrice = editingPrice[salePriceKey];
+                      const isEditingPrice = editingPrice[priceKey];
                       const mrpLoading = priceLoading[mrpKey];
-                      const salePriceLoading = priceLoading[salePriceKey];
+                      const isPriceLoading = priceLoading[priceKey];
+
+                      // Calculate markup percentage for display
+                      const markup = (v.price && v.vendorsaleprice && v.vendorsaleprice > 0)
+                        ? (((v.price / v.vendorsaleprice) - 1) * 100).toFixed(2)
+                        : "0.00";
                       
                       return (
                         <tr key={v.id} className="even:bg-gray-50">
@@ -540,23 +540,23 @@ const ViewProduct = () => {
                                 onClick={() => startEditingPrice(v.id, "mrp", v.mrp)}
                                 title="Click to edit"
                               >
-                                <span>AED{v.mrp}</span>
+                                <span>€{v.mrp}</span>
                                 <PencilIcon className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                             )}
                           </td>
-                          
-                          {/* Our Sale Price - Editable */}
-                          <td className="px-3 py-2 border">
-                            {isEditingSalePrice ? (
+
+                          {/* Our Price - Editable */}
+                          <td className="px-3 py-2 border bg-green-600">
+                            {isEditingPrice ? (
                               <div className="flex items-center gap-1">
                                 <Input
                                   type="number"
                                   step="0.01"
-                                  value={priceValues[salePriceKey] !== undefined ? priceValues[salePriceKey] : v.sale_price}
-                                  onChange={(e) => handlePriceChange(v.id, "sale_price", e.target.value)}
+                                  value={priceValues[priceKey] !== undefined ? priceValues[priceKey] : v.price}
+                                  onChange={(e) => handlePriceChange(v.id, "price", e.target.value)}
                                   className="w-20 h-8 text-sm"
-                                  disabled={salePriceLoading}
+                                  disabled={isPriceLoading}
                                   onFocus={(e) => {
                                     setTimeout(() => {
                                       e.target.select();
@@ -572,32 +572,32 @@ const ViewProduct = () => {
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === "Enter") {
-                                      const value = priceValues[salePriceKey] !== undefined ? priceValues[salePriceKey] : v.sale_price;
+                                      const value = priceValues[priceKey] !== undefined ? priceValues[priceKey] : v.price;
                                       if (value && value !== "") {
-                                        handlePriceUpdate(v.id, "sale_price", value);
+                                        handlePriceUpdate(v.id, "price", value);
                                       }
                                     } else if (e.key === "Escape") {
-                                      cancelEditingPrice(v.id, "sale_price");
+                                      cancelEditingPrice(v.id, "price");
                                     }
                                   }}
                                   autoFocus
                                 />
                                 <button
                                   onClick={() => {
-                                    const value = priceValues[salePriceKey] !== undefined ? priceValues[salePriceKey] : v.sale_price;
+                                    const value = priceValues[priceKey] !== undefined ? priceValues[priceKey] : v.price;
                                     if (value && value !== "") {
-                                      handlePriceUpdate(v.id, "sale_price", value);
+                                      handlePriceUpdate(v.id, "price", value);
                                     }
                                   }}
-                                  disabled={salePriceLoading || !priceValues[salePriceKey] || priceValues[  salePriceKey] === ""}
+                                  disabled={isPriceLoading || !priceValues[priceKey] || priceValues[priceKey] === ""}
                                   className="p-1 text-green-600 hover:text-green-700 disabled:opacity-50"
                                   title="Save"
                                 >
                                   <Check className="h-4 w-4 cursor-pointer" />
                                 </button>
                                 <button
-                                  onClick={() => cancelEditingPrice(v.id, "sale_price")}
-                                  disabled={salePriceLoading}
+                                  onClick={() => cancelEditingPrice(v.id, "price")}
+                                  disabled={isPriceLoading}
                                   className="p-1 text-red-600 hover:text-red-700 disabled:opacity-50"
                                   title="Cancel"
                                 >
@@ -605,24 +605,25 @@ const ViewProduct = () => {
                                 </button>
                               </div>
                             ) : (
-                              <div 
+                              <div
                                 className="flex items-center gap-1 cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5 group"
-                                onClick={() => startEditingPrice(v.id, "sale_price", v.sale_price)}
+                                onClick={() => startEditingPrice(v.id, "price", v.price)}
                                 title="Click to edit"
                               >
-                                <span>AED{v.sale_price}</span>
+                                <span>€{v.price}</span>
                                 <PencilIcon className="h-3 w-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                               </div>
                             )}
                           </td>
-                          
-                          <td className="px-3 py-2 border">AED{v.vendor_mrp}</td>
-                          <td className="px-3 py-2 border">AED{v.vendor_sale_price}</td>
-                          <td className="px-3 py-2 border font-semibold">
-                            <span className={parseFloat(percentageDiff) >= 0 ? "text-green-600" : "text-red-600"}>
-                              {percentageDiff}%
-                            </span>
+
+                          <td className="px-3 py-2 border">€{v.vendormrp || v.vendor_mrp || "N/A"}</td>
+                          <td className="px-3 py-2 border">€{v.vendorsaleprice || v.vendor_sale_price || "N/A"}</td>
+
+                          {/* Markup Percent - Display Only (Calculated) */}
+                          <td className="px-3 py-2 border">
+                            <span className="font-semibold text-blue-600">{markup}%</span>
                           </td>
+
                           <td className="px-3 py-2 border">{v.variant_color || "N/A"}</td>
                           <td className="px-3 py-2 border">{v.variant_size || "N/A"}</td>
                           <td className="px-3 py-2 border">{v.stock}</td>

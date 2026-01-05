@@ -19,6 +19,7 @@ import {
   Plug,
   ChevronDown,
   ChevronRight,
+  Globe,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -77,6 +78,11 @@ const sidebarRoutes = [
     label: "Settings",
     path: ROUTE_PATH.DASHBOARD.SETTINGS,
     icon: <Settings size={18} />,
+  },
+  {
+    label: "Countries",
+    path: ROUTE_PATH.DASHBOARD.COUNTRIES,
+    icon: <Globe size={18} />,
   },
   {
     label: "Import Product",

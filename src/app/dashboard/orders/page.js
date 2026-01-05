@@ -487,7 +487,8 @@ const OrdersPage = () => {
                       <TableHead>Order Number</TableHead>
                       <TableHead>Order Date</TableHead>
                       <TableHead>City</TableHead>
-                      <TableHead>Amount</TableHead>
+                      <TableHead>Amount (EUR)</TableHead>
+                      <TableHead>Paid</TableHead>
                       <TableHead>Payment Status</TableHead>
                       <TableHead>Order Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -516,7 +517,18 @@ const OrdersPage = () => {
                               order?.billing_address?.city ||
                               "-"}
                           </TableCell>
-                          <TableCell>AED {order.total_amount || 0}</TableCell>
+                          <TableCell>€{order.total_amount || 0}</TableCell>
+                          <TableCell>
+                            {order.currency_symbol || order.currency || "€"}
+                            {order.exchange_rate && order.exchange_rate !== 1
+                              ? (order.total_amount * order.exchange_rate).toFixed(2)
+                              : order.total_amount || 0}
+                            {order.currency && order.currency !== "EUR" && (
+                              <span className="text-xs text-gray-500 ml-1">
+                                ({order.currency})
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell className="capitalize">
                             <span
                               className={`px-3 py-1 rounded-md text-gray-100 font-bold ${
@@ -717,14 +729,38 @@ const OrdersPage = () => {
                       </div>
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
-                      <div>
+                      {/* <div>
                         <dt className="font-semibold text-gray-600 uppercase tracking-wider text-xs">
                           Total Amount
                         </dt>
                         <dd className="mt-1 text-xl font-semibold text-gray-900">
-                          AED {orderDetails?.total_amount ?? 0}
+                          €{orderDetails?.total_amount ?? 0}
                         </dd>
-                      </div>
+                        <dt className="font-semibold text-gray-600 uppercase tracking-wider text-xs">
+                          Discount
+                        </dt>
+                        <dd className="mt-1 text-xl font-semibold text-gray-900">
+                          €{orderDetails?.discount ?? 0}
+                        </dd>
+                        <dt className="font-semibold text-gray-600 uppercase tracking-wider text-xs">
+                          payable Amount
+                        </dt>
+                        <dd className="mt-1 text-xl font-semibold text-gray-900">
+                          €{orderDetails?.total_amount - orderDetails?.discount ?? 0}
+                        </dd>
+                        {orderDetails?.currency && orderDetails?.currency !== "EUR" && (
+                          <dd className="mt-2 text-sm text-gray-600">
+                            <span className="font-medium">Customer Paid in: </span>
+                            {orderDetails.currency_symbol || orderDetails.currency}
+                            {orderDetails.exchange_rate
+                              ? (orderDetails.total_amount * orderDetails.exchange_rate - orderDetails.discount * orderDetails.exchange_rate).toFixed(2)
+                              : orderDetails.total_amount}
+                            <span className="ml-1 text-xs">
+                              ({orderDetails.currency} @ rate {orderDetails.exchange_rate})
+                            </span>
+                          </dd>
+                        )}
+                      </div> */}
                       <div className="flex items-center gap-3">
                         <div>
                           <dt className="font-semibold text-gray-600 uppercase tracking-wider text-xs">
@@ -801,8 +837,9 @@ const OrdersPage = () => {
                         Amount
                       </dt>
                       <dd className="mt-1 text-base">
+                        {console.log("oderdetails:",orderDetails)}
                         {orderDetails.payment?.amount
-                          ? `AED ${orderDetails.payment?.amount}`
+                          ? `${orderDetails.currency} ${orderDetails.payment?.amount}`
                           : "N/A"}
                       </dd>
                     </div>
@@ -862,6 +899,53 @@ const OrdersPage = () => {
                   </dl>
                 </section>
               </div>
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Price Summary
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-900">
+                   <p>
+                  <b>Total Amount:</b>{" "}
+                  <span className="font-semibold text-green-700">
+                    €{orderDetails.total_amount}
+                  </span>
+                </p>
+                <p>
+                  <b>Shipping Charges:</b> €{orderDetails?.shipping_charge || 0}
+                </p>
+                <p>
+                  <b>Coupon Discount:</b> €
+                  {orderDetails?.coupon_code
+                    ? (orderDetails?.discount || 0)
+                    : 0}
+                  {orderDetails?.coupon_code && (
+                    <span className="ml-2 text-xs text-green-600 font-medium">
+                      ({orderDetails.coupon_code})
+                    </span>
+                  )}
+                </p>
+             <p>
+                  <b>payable :</b > 
+                  <span className="font-semibold text-green-700"> € {orderDetails?.total_amount - orderDetails?.discount ?? 0}
+                  </span>
+                </p>
+                {orderDetails?.currency && orderDetails?.currency !== "EUR" && (
+                  <p className="col-span-2 mt-2 p-3 bg-blue-50 rounded-md">
+                    <b>Customer payed in :</b>{" "}
+                    <span className="font-semibold text-blue-700">
+                      {orderDetails.currency_symbol || orderDetails.currency}
+                      {orderDetails.exchange_rate
+                        ? (orderDetails.total_amount * orderDetails.exchange_rate - orderDetails.discount * orderDetails.exchange_rate).toFixed(2)
+                        : orderDetails.total_amount}
+                    </span>
+                    <span className="ml-2 text-sm text-gray-600">
+                      ({orderDetails.currency} @ rate {orderDetails.exchange_rate})
+                    </span>
+                  </p>
+                )}
+                
+              </div>
+            </div>
 
               {/* Address blocks */}
               <div className="grid gap-6 md:grid-cols-2">
@@ -1036,27 +1120,6 @@ const OrdersPage = () => {
              </div>
           </div> */}
 
-            {/* 💰 Price Summary */}
-            <div className="border-t pt-4">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                💰 Price Summary
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-900">
-                <p>
-                  <b>Shipping Charges:</b> AED{" "}
-                  {orderDetails?.shipping_charge || 0}
-                </p>
-                <p>
-                  <b>Discounts Applied:</b> AED {orderDetails?.discount || 0}
-                </p>
-                <p>
-                  <b>Total Amount:</b>{" "}
-                  <span className="font-semibold text-green-700">
-                    AED {orderDetails.total_amount}
-                  </span>
-                </p>
-              </div>
-            </div>
 
             {/* 🛍️ Ordered Items */}
             <div className="border-t pt-4">
@@ -1139,12 +1202,12 @@ const OrdersPage = () => {
                           </p>
                           <p>
                             <b>Price:</b>
-                            {item.price ? `AED ${item.price}` : "N/A"}
+                            {item.price ? `€${item.price}` : "N/A"}
                           </p>
                           <p>
                             <b>Vendor Sale Price:</b>{" "}
                             {item.variant.vendorsaleprice
-                              ? `AED ${item.variant.vendorsaleprice}`
+                              ? `€${item.variant.vendorsaleprice}`
                               : "N/A"}
                           </p>
                         </div>

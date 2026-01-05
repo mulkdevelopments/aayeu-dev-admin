@@ -26,6 +26,7 @@ export const ROUTE_PATH = {
    USERS: "/dashboard/users",
   
     SETTINGS: "/dashboard/settings",
+    COUNTRIES: "/dashboard/countries",
 
     SETTINGS_MENU_CONFIG: "/dashboard/settings/menu-config",
     SETTINGS_HOME_CONFIG: "/dashboard/settings/home-config",

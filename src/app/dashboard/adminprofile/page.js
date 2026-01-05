@@ -11,7 +11,7 @@ import { ArrowLeft } from "lucide-react"; // For back icon
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [profileImage, setProfileImage] = useState("/default-profile.jpg");
+  const [profileImage, setProfileImage] = useState("https://res.cloudinary.com/dxppgyuwt/image/upload/v1766337357/hero/xe7k3ywclxhe917mnipn.png");
 
   const {
     control,
@@ -19,10 +19,10 @@ export default function ProfilePage() {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      name: "Praveen Patel",
-      email: "praveen@example.com",
-      phone: "9876543210",
-      address: "Indore, MP",
+      name: "Shibin sha",
+      email: "Shibin@mulkholdings.com",
+      phone: "7012975494",
+      address: "kochi, kerala",
     },
   });
 
@@ -57,9 +57,9 @@ export default function ProfilePage() {
             <Image
               src={profileImage}
               alt="Profile"
-              width={128}
-              height={128}
-              className="w-full h-full object-cover rounded-full"
+              width={158}
+              height={158}
+              className="w-full h-half object-cover rounded-full"
             />
           </div>
 
@@ -86,9 +86,9 @@ export default function ProfilePage() {
 
           <div className="mt-6 text-center">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Praveen Patel
+            Shibin sha
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Admin / Manager</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Admin</p>
           </div>
         </div>
 

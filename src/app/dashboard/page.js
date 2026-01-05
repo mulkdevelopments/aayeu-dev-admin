@@ -151,8 +151,8 @@ export default function DashboardPage() {
         path: ROUTE_PATH.DASHBOARD.VENDORS,
       },
       {
-        title: "Total Revenue (AED)",
-        value: totalRevenue ? `AED ${totalRevenue}` : "AED 0",
+        title: "Total Revenue ",
+        value: totalRevenue ? `€ ${totalRevenue}` : "€ 0",
         icon: DirhamSymbol,
         bg: "bg-purple-50",
         path: "#",
@@ -219,7 +219,11 @@ export default function DashboardPage() {
                       </Link>
                     </TableCell>
                     <TableCell>{order.shipping_address?.city || "—"}</TableCell>
-                    <TableCell>AED {order.total_amount ?? "0.00"}</TableCell>
+                   <TableCell>
+                      {order.currency_symbol || order.currency}{" "}
+                      {(((order.total_amount ?? 0) - (order.discount ?? 0)) * (order.exchange_rate ?? 1)).toFixed(2)}
+                    </TableCell>
+
                     <TableCell>
                       <StatusBadge status={order.order_status} />
                     </TableCell>
