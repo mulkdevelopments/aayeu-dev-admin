@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/popover";
 import CancelOrderDialog from "@/components/_dialogs/CancelOrder";
 import Link from "next/link";
+import VendorOrderItems from "@/components/_sections/VendorOrderItems";
 // import InvoicePdfModal from "@/components/comman/InvoicePdfModel";
 
 const OrdersPage = () => {
@@ -192,6 +193,44 @@ const OrdersPage = () => {
     fetchOrders();
     if (selectedOrder) {
       fetchOrderDetails(selectedOrder);
+    }
+  };
+
+  // 🔄 Retry Vendor Order
+  const handleRetryVendorOrder = async (orderId, vendorId) => {
+    const { data, error } = await request({
+      method: "POST",
+      url: `/admin/vendor-orders/${orderId}/retry`,
+      payload: vendorId ? { vendorId } : {},
+      authRequired: true,
+    });
+
+    if (error) {
+      showToast("error", `Retry failed: ${error.message || "Unknown error"}`);
+    } else {
+      showToast("success", "Vendor order retry initiated");
+      if (selectedOrder) {
+        fetchOrderDetails(selectedOrder);
+      }
+    }
+  };
+
+  // 📦 Sync Tracking
+  const handleSyncTracking = async (orderId) => {
+    const { data, error } = await request({
+      method: "POST",
+      url: `/admin/vendor-orders/${orderId}/sync-tracking`,
+      authRequired: true,
+    });
+
+    if (error) {
+      showToast("error", "Tracking sync failed");
+    } else {
+      const count = data?.result?.trackingResults?.length || 0;
+      showToast("success", `Updated tracking for ${count} shipment${count !== 1 ? 's' : ''}`);
+      if (selectedOrder) {
+        fetchOrderDetails(selectedOrder);
+      }
     }
   };
 
@@ -1126,109 +1165,12 @@ const OrdersPage = () => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">
                 🛍️ Ordered Items
               </h3>
-              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-                {orderDetails.items.map((item, i) => (
-                  <Link
-                    key={item.id || i}
-                    href={`https://www.aayeu.com${item.product_link || ""}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <div
-                      key={item.id || i}
-                      className="p-4 border border-gray-200 rounded-xl bg-gray-50 hover:shadow-md transition-all flex flex-col gap-4 items-stretch"
-                    >
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="relative h-48 w-48 sm:h-52 sm:w-52 flex items-center justify-center rounded-lg bg-white border border-gray-200 overflow-hidden">
-                          {/* Product Image */}
-                          <Image
-                            src={
-                              selectedImageByItem[item.id] ||
-                              item.product.product_img
-                            }
-                            alt={item.product.name}
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-
-                        {/* Variant images */}
-                        <div className="flex gap-2 w-full overflow-x-auto justify-center">
-                          {item.variant.images.map((picture, idx) => (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() =>
-                                setSelectedImageByItem((prev) => ({
-                                  ...prev,
-                                  [item.id]: picture,
-                                }))
-                              }
-                              className={`rounded-lg border-2 flex-shrink-0 ${
-                                (selectedImageByItem[item.id] ||
-                                  item.product.product_img) === picture
-                                  ? "border-amber-500"
-                                  : "border-transparent"
-                              }`}
-                            >
-                              <div className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center bg-white rounded-lg border border-gray-200 overflow-hidden">
-                                <Image
-                                  src={picture}
-                                  alt={item.product.name}
-                                  width={56}
-                                  height={56}
-                                  className="object-contain"
-                                />
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <h4 className="font-bold text-lg text-gray-900 text-center">
-                          {item.product.name || "N/A"}
-                        </h4>
-                        <div className="grid gap-1">
-                          <p>
-                            <b>Quantity:</b> {item.qty || "N/A"}
-                          </p>
-                          <p>
-                            <b>Variant SKU:</b> {item.variant.sku || "N/A"}
-                          </p>
-                          <p>
-                            <b>Stock:</b> {item.variant.stock || "N/A"}
-                          </p>
-                          <p>
-                            <b>Price:</b>
-                            {item.price ? `€${item.price}` : "N/A"}
-                          </p>
-                          <p>
-                            <b>Vendor Sale Price:</b>{" "}
-                            {item.variant.vendorsaleprice
-                              ? `€${item.variant.vendorsaleprice}`
-                              : "N/A"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="border-t pt-3 text-sm text-gray-600 space-y-1">
-                        <p className="text-base font-semibold text-gray-900">
-                          Vendor Details
-                        </p>
-                        <p>
-                          <b>Name:</b> {item.vendor?.name || "N/A"}
-                        </p>
-                        <p>
-                          <b>Contact Email:</b>{" "}
-                          {item.vendor?.contact_email || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              <VendorOrderItems
+                items={orderDetails.items}
+                orderId={orderDetails.id}
+                onRetry={handleRetryVendorOrder}
+                onSyncTracking={handleSyncTracking}
+              />
             </div>
 
             {/* 🔄 Update & Back Buttons */}
