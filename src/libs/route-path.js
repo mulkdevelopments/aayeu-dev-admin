@@ -15,6 +15,8 @@ export const ROUTE_PATH = {
     CUSTOMERS: "/dashboard/customers",
     ADMIN_PROFILE: "/dashboard/adminprofile",
     VENDORS: "/dashboard/vendors",
+    PLUGINS: "/dashboard/plugins",
+    PLUGIN_DETAIL: "/dashboard/plugins/:id",
     ORDERS: "/dashboard/orders",
     INVENTORIES: "/dashboard/inventories",
     VIEW_PRODUCT: "/dashboard/inventories/viewproduct/:id",
@@ -24,7 +26,7 @@ export const ROUTE_PATH = {
     CATEGORY_MANAGEMENT: "/dashboard/inventories/categorymanagement",
     REPORTS: "/dashboard/reports",
    USERS: "/dashboard/users",
-  
+
     SETTINGS: "/dashboard/settings",
     COUNTRIES: "/dashboard/countries",
 
@@ -41,10 +43,6 @@ export const ROUTE_PATH = {
     SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS_ADD_NEW_BRANDS: "/dashboard/settings/home-config/manage-featured-brands/addnewbrands",
     SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS: "/dashboard/settings/home-config/manage-new-arrivals",
     SETTINGS_HOME_ADD_BEST_SELLER: "/dashboard/settings/home-config/manage-best-sellers/addbestseller",
-
-    // Plugins
-    PLUGINS: "/dashboard/plugins",
-    PLUGINS_LUXURY_DISTRIBUTION: "/dashboard/plugins/luxury-distribution",
   },
 };
 

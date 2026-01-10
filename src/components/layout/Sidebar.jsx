@@ -7,19 +7,19 @@ import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 import ROUTE_PATH from "@/libs/route-path";
 import { useLogout } from "@/hooks/useLogout";
+import useAxios from "@/hooks/useAxios";
 import {
   Home,
   Users,
-  Truck,
   ShoppingCart,
   Boxes,
   BarChart3,
   Settings,
   FolderTree,
-  Plug,
   ChevronDown,
   ChevronRight,
   Globe,
+  Plug,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -34,14 +34,14 @@ const sidebarRoutes = [
     icon: <Users size={18} />,
   },
   {
-    label: "Vendors",
-    path: ROUTE_PATH.DASHBOARD.VENDORS,
-    icon: <Truck size={18} />,
+    label: "Plugins",
+    icon: <Plug size={18} />,
+    isPluginMenu: true, // Dynamic submenu for vendors
   },
   {
     label: "Orders",
     path: ROUTE_PATH.DASHBOARD.ORDERS,
-    
+
     icon: <ShoppingCart size={18} />,
   },
   {
@@ -53,16 +53,6 @@ const sidebarRoutes = [
     label: "Category Management",
     path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
     icon: <FolderTree size={18} />,
-  },
-  {
-    label: "Plugins",
-    icon: <Plug size={18} />,
-    subItems: [
-      {
-        label: "Luxury Distribution",
-        path: ROUTE_PATH.DASHBOARD.PLUGINS_LUXURY_DISTRIBUTION,
-      }
-    ]
   },
   // {
   //   label: "Reports",
@@ -107,7 +97,10 @@ export default function Sidebar({ isOpen, onClose }) {
   const modalRef = useRef(null);
   const [activeRoute, setActiveRoute] = useState(pathname);
   const [expandedItems, setExpandedItems] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
   const { handleLogout } = useLogout();
+  const { request } = useAxios();
 
   const toggleExpand = (label) => {
     setExpandedItems(prev =>
@@ -116,6 +109,31 @@ export default function Sidebar({ isOpen, onClose }) {
         : [...prev, label]
     );
   };
+
+  // Fetch vendors for Plugins submenu
+  useEffect(() => {
+    const fetchVendors = async () => {
+      setVendorsLoading(true);
+      try {
+        const { data, error } = await request({
+          method: "GET",
+          url: "/admin/get-vendor-list",
+          authRequired: true,
+          params: { limit: 100, status: "all" }, // Get all vendors
+        });
+
+        if (!error && data?.data?.vendors) {
+          setVendors(data.data.vendors);
+        }
+      } catch (err) {
+        console.error("Error fetching vendors:", err);
+      } finally {
+        setVendorsLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -172,7 +190,57 @@ export default function Sidebar({ isOpen, onClose }) {
         <nav className="mt-4 space-y-2 space-x-6 px-2 flex-1">
           {sidebarRoutes.map((item) => (
             <div key={item.path || item.label}>
-              {item.subItems ? (
+              {item.isPluginMenu ? (
+                // Plugins menu with dynamic vendor submenu
+                <div>
+                  <button
+                    onClick={() => toggleExpand(item.label)}
+                    className="flex items-center justify-between w-full px-4 py-2 rounded-md text-sm font-medium transition-colors text-black hover:bg-gray-300"
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-3">{item.icon}</span>
+                      {item.label}
+                    </div>
+                    {expandedItems.includes(item.label) ? (
+                      <ChevronDown size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )}
+                  </button>
+                  {expandedItems.includes(item.label) && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {vendorsLoading ? (
+                        <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                      ) : vendors.length === 0 ? (
+                        <div className="px-4 py-2 text-sm text-gray-500">No plugins available</div>
+                      ) : (
+                        vendors.map((vendor) => {
+                          const vendorPath = `/dashboard/plugins/${vendor.id}`;
+                          return (
+                            <Link
+                              key={vendor.id}
+                              href={vendorPath}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setActiveRoute(vendorPath);
+                                onClose?.();
+                                router.push(vendorPath);
+                              }}
+                              className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                activeRoute === vendorPath
+                                  ? "bg-yellow-600 text-white"
+                                  : "text-black hover:bg-gray-300"
+                              }`}
+                            >
+                              {vendor.name}
+                            </Link>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : item.subItems ? (
                 // Item with sub-items (collapsible)
                 <div>
                   <button

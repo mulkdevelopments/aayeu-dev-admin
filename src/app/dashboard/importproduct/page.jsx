@@ -15,7 +15,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import SyncLuxuryDialog from "@/components/_dialogs/SyncLuxuryDialog";
+import SyncProgressTracker from "@/components/_dialogs/SyncProgressTracker";
 
 // vendors will be fetched from API and limited to first 3
 
@@ -480,10 +480,9 @@ const ImportProduct = () => {
           </CardContent>
         </Card>
       )}
-      <SyncLuxuryDialog
+      <SyncProgressTracker
         open={syncDialogOpen}
         onClose={() => setSyncDialogOpen(false)}
-        currencyOptions={currencyOptions}
       />
     </div>
   );

@@ -47,6 +47,7 @@ export default function InventoryPage() {
   const [brands, setBrands] = useState([]);
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [brandSearch, setBrandSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
   const [jumpToPage, setJumpToPage] = useState("");
 
   const [state, setState] = useState({
@@ -102,14 +103,7 @@ export default function InventoryPage() {
       if (error) throw new Error(error?.message || error);
       setProducts(data?.data?.products || []);
 
-      const allCategories =
-        data?.data?.products?.flatMap((p) => p.categories) || [];
-      setCategories(allCategories);
-
-      const uniqueCategories = Array.from(
-        new Map(allCategories.map((cat) => [cat.id, cat])).values()
-      );
-      setCategories(uniqueCategories);
+      // Categories are now loaded separately on mount, don't overwrite them
 
       setTotalPages(data?.data?.total_pages || 1);
     } catch (err) {
@@ -210,6 +204,60 @@ export default function InventoryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Helper function to flatten nested categories with full paths
+  const flattenCategories = (categories, parentPath = "") => {
+    let flattened = [];
+
+    for (const cat of categories) {
+      // Use the category's path field if available, otherwise build it
+      const displayPath = cat.path || (parentPath ? `${parentPath} > ${cat.name}` : cat.name);
+
+      flattened.push({
+        id: cat.id,
+        name: cat.name,
+        displayPath: displayPath,
+        level: parentPath ? parentPath.split(" > ").length : 0
+      });
+
+      // Recursively flatten children
+      if (cat.children && cat.children.length > 0) {
+        const childPath = cat.path || (parentPath ? `${parentPath} > ${cat.name}` : cat.name);
+        flattened = flattened.concat(flattenCategories(cat.children, childPath));
+      }
+    }
+
+    return flattened;
+  };
+
+  // Fetch all categories (once on mount)
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      try {
+        const { data, error } = await request({
+          method: "GET",
+          url: "/admin/get-categories",
+          authRequired: true,
+        });
+
+        if (error) throw new Error(error?.message || error);
+
+        // API returns nested tree structure
+        const nestedCategories = data?.data?.categories || data?.data || [];
+
+        // Flatten the tree and include full paths
+        const flatCategories = flattenCategories(nestedCategories);
+
+        setCategories(flatCategories);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+        // Fallback: if this fails, categories will remain empty
+      }
+    };
+
+    fetchAllCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Fetch all brands
   useEffect(() => {
     const fetchBrands = async () => {
@@ -239,6 +287,10 @@ export default function InventoryPage() {
 
   const filteredBrands = brands.filter((b) =>
     b.brand_name.toLowerCase().includes(brandSearch.toLowerCase())
+  );
+
+  const filteredCategories = categories.filter((cat) =>
+    cat.displayPath.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
   return (
@@ -331,13 +383,33 @@ export default function InventoryPage() {
           <SelectTrigger className="w-full sm:w-[180px] md:w-[130px] lg:w-[180px]">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
-          <SelectContent className="max-h-60 lg:max-w-46 overflow-y-auto">
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.name}>
-                {cat.name}
-              </SelectItem>
-            ))}
+          <SelectContent className="p-0">
+            {/* Category Search Bar */}
+            <div className="sticky top-0 z-20 bg-white p-2 border-b shadow-sm">
+              <Input
+                placeholder="Search category..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+
+            {/* Scrollable Category List */}
+            <div className="max-h-60 lg:max-w-96 overflow-y-auto">
+              <SelectItem value="all">All Categories</SelectItem>
+
+              {filteredCategories.length === 0 ? (
+                <div className="p-2 text-sm text-gray-500">No categories found</div>
+              ) : (
+                filteredCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.name}>
+                    <span className={cat.level > 0 ? "text-gray-600" : ""}>
+                      {cat.displayPath}
+                    </span>
+                  </SelectItem>
+                ))
+              )}
+            </div>
           </SelectContent>
         </Select>
 
@@ -487,10 +559,12 @@ export default function InventoryPage() {
                 <TableHead>Category</TableHead>
                 <TableHead>Brand</TableHead>
                 <TableHead>Gender</TableHead>
+                <TableHead>Vendor</TableHead>
                 <TableHead>Price</TableHead>
-                <TableHead>Vendor </TableHead>
+                <TableHead>Vendor Price</TableHead>
                 <TableHead>Markup %</TableHead>
                 <TableHead>Stock</TableHead>
+                <TableHead className="text-center">Last Updated</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Mapping</TableHead>
                 <TableHead className="text-center">Action</TableHead>
@@ -517,6 +591,9 @@ export default function InventoryPage() {
                     <TableCell>
                       <Skeleton className="h-4 w-24" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-16" />
                     </TableCell>
@@ -528,6 +605,9 @@ export default function InventoryPage() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-12" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="mx-auto h-4 w-20" />
                     </TableCell>
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-6 w-16 rounded-md" />
@@ -557,23 +637,47 @@ export default function InventoryPage() {
                     "-";
                   const variant = product.variants?.[0] || {};
 
+                  // Check if product is "new" (created within last 24 hours)
+                  const createdAt = new Date(product.created_at);
+                  const now = new Date();
+                  const hoursDiff = (now - createdAt) / (1000 * 60 * 60);
+                  const isNew = hoursDiff < 24;
+
+                  // Format updated_at
+                  const updatedAt = product.updated_at
+                    ? new Date(product.updated_at).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : '-';
+
                   return (
                     <TableRow key={product.id}>
                       <TableCell>
-                        <Link
-                          href={`https://www.aayeu.com/shop/product/${generateProductSlug(
-                            product.name
-                          )}/${product.id}?cat=${generateProductSlug(
-                            product.categories?.[0]?.name
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block"
-                        >
-                          <div className="font-medium hover:text-amber-600 transition">
-                            {product.name}
-                          </div>
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`https://www.aayeu.com/shop/product/${generateProductSlug(
+                              product.name
+                            )}/${product.id}?cat=${generateProductSlug(
+                              product.categories?.[0]?.name
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block"
+                          >
+                            <div className="font-medium hover:text-amber-600 transition">
+                              {product.name}
+                            </div>
+                          </Link>
+                          {isNew && (
+                            <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-0.5">
+                              New
+                            </Badge>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-600">
                           SKU: {product.product_sku || "-"}
                         </div>
@@ -582,6 +686,7 @@ export default function InventoryPage() {
                       <TableCell>{categoryNames}</TableCell>
                       <TableCell>{product.brand_name || "-"}</TableCell>
                       <TableCell>{product.gender || "-"}</TableCell>
+                      <TableCell>{product.vendor_name || "-"}</TableCell>
 
                       <TableCell className="text-center">
                         {variant.price ? `€${variant.price}` : "-"}
@@ -603,6 +708,12 @@ export default function InventoryPage() {
 
                       <TableCell className="text-center">
                         {variant.stock || "-"}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <div className="text-xs text-gray-700">
+                          {updatedAt}
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-center">

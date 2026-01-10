@@ -312,6 +312,7 @@ const ViewProduct = () => {
             <div className="flex flex-wrap gap-4">
               <p className="text-black"><strong>Category:</strong> {product.categories?.[0]?.name || "N/A"}</p>
               <p className="text-black"><strong>Brand:</strong> {product.brand_name || "N/A"}</p>
+              <p className="text-black"><strong>Vendor:</strong> {product.vendor_name || "N/A"}</p>
               {/* <p className="text-black"><strong>Min Price:</strong> €{product.min_price || "N/A"}</p>
               <p className="text-black"><strong>Max Price:</strong> €{product.max_price || "N/A"}</p> */}
               <p className="text-black"><strong>Stock (first variant):</strong> {product.variants?.[0]?.stock || "N/A"}</p>
