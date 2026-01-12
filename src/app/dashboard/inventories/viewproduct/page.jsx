@@ -33,6 +33,9 @@ const ViewProduct = () => {
   const [editingPrice, setEditingPrice] = useState({});
   const [priceValues, setPriceValues] = useState({});
   const [priceLoading, setPriceLoading] = useState({});
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [liveStockData, setLiveStockData] = useState(null);
+  const [stockCheckLoading, setStockCheckLoading] = useState(false);
 
 
   const fetchProduct = async () => {
@@ -48,12 +51,44 @@ const ViewProduct = () => {
         setProduct(data.data);
         console.log("Fetched product data:", data.data);
         showToast("success", data.message);
+
+        // Automatically fetch live stock if vendor supports it
+        if (data.data?.vendor_capabilities?.has_individual_syncing) {
+          fetchLiveStock();
+        }
       }
     } catch (err) {
       console.error("API Error:", err);
       showToast("error", err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch live stock automatically (separated from user action)
+  const fetchLiveStock = async () => {
+    setStockCheckLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "GET",
+        url: `/admin/check-live-stock?productId=${productId}`,
+        authRequired: true,
+      });
+
+      if (error) {
+        console.warn("Live stock check failed:", error);
+        // Set stock to 0 on error
+        setLiveStockData({ stockBySize: [], totalStock: 0, error: true });
+        return;
+      }
+
+      setLiveStockData(data.data);
+    } catch (err) {
+      console.warn("Error checking live stock:", err);
+      // Set stock to 0 on error
+      setLiveStockData({ stockBySize: [], totalStock: 0, error: true });
+    } finally {
+      setStockCheckLoading(false);
     }
   };
 
@@ -162,6 +197,35 @@ const ViewProduct = () => {
 
   const handleRefresh = () => {
     fetchProduct();
+  };
+
+  // Handle individual product sync
+  const handleSyncProduct = async () => {
+    if (!productId) return;
+    setSyncLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/sync-individual-product",
+        payload: {
+          productId,
+        },
+        authRequired: true,
+      });
+
+      if (error) throw new Error(error?.message || error);
+
+      showToast("success", data?.message || "Product synced successfully");
+
+      // Refresh product data after sync
+      await fetchProduct();
+      // Live stock will be auto-fetched by fetchProduct
+    } catch (err) {
+      console.error("Error syncing product:", err);
+      showToast("error", err.message || "Failed to sync product");
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   // Handle price update
@@ -303,6 +367,17 @@ const ViewProduct = () => {
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh
                   </Button>
+                  {product?.vendor_capabilities?.has_individual_syncing && (
+                    <Button
+                      className="rounded-md bg-blue-600 hover:bg-blue-700"
+                      size="lg"
+                      onClick={handleSyncProduct}
+                      disabled={syncLoading}
+                    >
+                      <RefreshCw className={`w-4 h-4 mr-2 ${syncLoading ? 'animate-spin' : ''}`} />
+                      {syncLoading ? 'Syncing...' : 'Sync This'}
+                    </Button>
+                  )}
                   {/* <UpdateProductModal product={product} onSuccess={fetchProduct} />  */}
                 </div>
               </div>
@@ -315,7 +390,6 @@ const ViewProduct = () => {
               <p className="text-black"><strong>Vendor:</strong> {product.vendor_name || "N/A"}</p>
               {/* <p className="text-black"><strong>Min Price:</strong> €{product.min_price || "N/A"}</p>
               <p className="text-black"><strong>Max Price:</strong> €{product.max_price || "N/A"}</p> */}
-              <p className="text-black"><strong>Stock (first variant):</strong> {product.variants?.[0]?.stock || "N/A"}</p>
               <p className="text-black"><strong>Country:</strong> {product.country_of_origin || "N/A"}</p>
             </div>
 
@@ -627,7 +701,30 @@ const ViewProduct = () => {
 
                           <td className="px-3 py-2 border">{v.variant_color || "N/A"}</td>
                           <td className="px-3 py-2 border">{v.variant_size || "N/A"}</td>
-                          <td className="px-3 py-2 border">{v.stock}</td>
+                          <td className="px-3 py-2 border">
+                            {product?.vendor_capabilities?.has_individual_syncing ? (
+                              stockCheckLoading ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="h-4 w-12 bg-gray-200 animate-pulse rounded"></div>
+                                </div>
+                              ) : liveStockData ? (
+                                (() => {
+                                  const sizeStock = liveStockData.stockBySize?.find(
+                                    s => s.size?.toLowerCase() === v.variant_size?.toLowerCase()
+                                  );
+                                  return (
+                                    <span className="font-medium text-green-600">
+                                      {sizeStock?.quantity ?? 0}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-gray-400">{v.stock}</span>
+                              )
+                            ) : (
+                              v.stock
+                            )}
+                          </td>
                         </tr>
                       );
                     })}

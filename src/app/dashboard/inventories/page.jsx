@@ -555,6 +555,7 @@ export default function InventoryPage() {
             {/* HEADER — shown only once */}
             <TableHeader className="bg-gray-200">
               <TableRow>
+                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Brand</TableHead>
@@ -563,7 +564,7 @@ export default function InventoryPage() {
                 <TableHead>Price</TableHead>
                 <TableHead>Vendor Price</TableHead>
                 <TableHead>Markup %</TableHead>
-                <TableHead>Stock</TableHead>
+                {/* <TableHead>Stock</TableHead> */}
                 <TableHead className="text-center">Last Updated</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-center">Mapping</TableHead>
@@ -576,6 +577,9 @@ export default function InventoryPage() {
               {loading &&
                 Array.from({ length: 8 }).map((_, idx) => (
                   <TableRow key={idx}>
+                     <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
                     <TableCell>
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-44" />
@@ -603,9 +607,9 @@ export default function InventoryPage() {
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-12" />
                     </TableCell>
-                    <TableCell className="text-center">
+                    {/* <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-12" />
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-4 w-20" />
                     </TableCell>
@@ -657,6 +661,20 @@ export default function InventoryPage() {
                   return (
                     <TableRow key={product.id}>
                       <TableCell>
+                        {console.log(product)}
+                        {product.product_img ? (
+                          <img
+                            src={product.product_img} 
+                            alt={product.name}
+                            className="h-16 w-16 object-cover rounded-md"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 bg-gray-200 rounded-md flex items-center justify-center">
+                            <span className="text-xs text-gray-500">No Image</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
                           <Link
                             href={`https://www.aayeu.com/shop/product/${generateProductSlug(
@@ -683,7 +701,24 @@ export default function InventoryPage() {
                         </div>
                       </TableCell>
 
-                      <TableCell>{categoryNames}</TableCell>
+                    <TableCell className="flex flex-wrap gap-1">
+  {product.mapped_categories?.length ? (
+    product.mapped_categories.map((cat, i) => (
+      <span
+        key={i}
+        className="rounded-full bg-yellow-600 px-2 py-0.5 text-xs text-white"
+      >
+        {cat.path
+          .split("/")
+          .map(w => w.replace(/-/g, " "))
+          .join(" › ")}
+      </span>
+    ))
+  ) : (
+    "-"
+  )}
+</TableCell>
+
                       <TableCell>{product.brand_name || "-"}</TableCell>
                       <TableCell>{product.gender || "-"}</TableCell>
                       <TableCell>{product.vendor_name || "-"}</TableCell>
@@ -706,9 +741,9 @@ export default function InventoryPage() {
                         </span>
                       </TableCell>
 
-                      <TableCell className="text-center">
+                      {/* <TableCell className="text-center">
                         {variant.stock || "-"}
-                      </TableCell>
+                      </TableCell> */}
 
                       <TableCell className="text-center">
                         <div className="text-xs text-gray-700">

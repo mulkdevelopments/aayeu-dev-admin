@@ -215,6 +215,15 @@ export default function VendorDetailPage() {
                   {renderCapabilityBadge(capabilities.has_stock_check_api)}
                 </div>
 
+                {/* Stock Check API */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">Individual Syncing</p>
+                    <p className="text-sm text-gray-500">individual inventory syncing</p>
+                  </div>
+                  {renderCapabilityBadge(capabilities.has_individual_syncing)}
+                </div>
+
                 {/* Order Placement API */}
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
