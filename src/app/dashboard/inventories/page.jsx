@@ -30,6 +30,7 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateProductSlug } from "@/utils/utilities";
+import ProductViewModal from "@/components/_dialogs/ProductViewModal";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -49,6 +50,8 @@ export default function InventoryPage() {
   const [brandSearch, setBrandSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [jumpToPage, setJumpToPage] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   const [state, setState] = useState({
     searchValue: "",
@@ -787,12 +790,16 @@ export default function InventoryPage() {
                       </TableCell> */}
 
                       <TableCell className="text-center">
-                        <Link
-                          href={`/dashboard/inventories/viewproduct?id=${product.id}`}
-                          target="_blank"
+                        <button
+                          onClick={() => {
+                            setSelectedProductId(product.id);
+                            setIsProductModalOpen(true);
+                          }}
+                          className="hover:text-yellow-600 transition-colors"
+                          title="View product details"
                         >
                           <Eye className="w-4 h-4" />
-                        </Link>
+                        </button>
                       </TableCell>
                     </TableRow>
                   );
@@ -888,6 +895,16 @@ export default function InventoryPage() {
           </div>
         </div>
       )}
+
+      {/* Product View Modal */}
+      <ProductViewModal
+        open={isProductModalOpen}
+        onClose={() => {
+          setIsProductModalOpen(false);
+          setSelectedProductId(null);
+        }}
+        productId={selectedProductId}
+      />
     </div>
   );
 }
