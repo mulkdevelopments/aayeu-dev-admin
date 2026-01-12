@@ -557,7 +557,7 @@ export default function InventoryPage() {
               <TableRow>
                 <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
+                 <TableHead>Category</TableHead>
                 <TableHead>Brand</TableHead>
                 <TableHead>Gender</TableHead>
                 <TableHead>Vendor</TableHead>
@@ -567,7 +567,8 @@ export default function InventoryPage() {
                 {/* <TableHead>Stock</TableHead> */}
                 <TableHead className="text-center">Last Updated</TableHead>
                 <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Mapping</TableHead>
+                {/* <TableHead className="text-center">Mapping</TableHead> */}
+                  
                 <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -586,9 +587,9 @@ export default function InventoryPage() {
                         <Skeleton className="h-3 w-28" />
                       </div>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <Skeleton className="h-4 w-32" />
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
@@ -701,21 +702,26 @@ export default function InventoryPage() {
                         </div>
                       </TableCell>
 
-                    <TableCell className="flex flex-wrap gap-1">
+             <TableCell className="text-center">
   {product.mapped_categories?.length ? (
     product.mapped_categories.map((cat, i) => (
-      <span
+      <Badge
         key={i}
-        className="rounded-full bg-yellow-600 px-2 py-0.5 text-xs text-white"
+        className="rounded-full bg-yellow-600  text-xs text-white"
       >
         {cat.path
           .split("/")
           .map(w => w.replace(/-/g, " "))
           .join(" › ")}
-      </span>
+      </Badge>
     ))
   ) : (
-    "-"
+      <Badge
+                            variant="destructive"
+                            className="bg-orange-500 hover:bg-orange-600 text-white"
+                          >
+                            Not Mapped
+                          </Badge>
   )}
 </TableCell>
 
@@ -762,7 +768,7 @@ export default function InventoryPage() {
                         </Badge>
                       </TableCell>
 
-                      <TableCell className="text-center">
+                      {/* <TableCell className="text-center">
                         {product.mapped_category || product.mapped_categories?.length > 0 ? (
                           <Badge
                             variant="success"
@@ -778,7 +784,7 @@ export default function InventoryPage() {
                             Not Mapped
                           </Badge>
                         )}
-                      </TableCell>
+                      </TableCell> */}
 
                       <TableCell className="text-center">
                         <Link
