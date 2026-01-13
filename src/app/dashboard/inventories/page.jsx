@@ -91,7 +91,7 @@ export default function InventoryPage() {
         state.filters;
 
       if (gender && gender !== "all") endpoint += `&gender=${gender}`;
-      if (category && category !== "all") endpoint += `&category=${category}`;
+      if (category && category !== "all") endpoint += `&category_path=${encodeURIComponent(category)}`;
       if (brand && brand !== "all") endpoint += `&brand=${brand}`;
       if (minPrice) endpoint += `&min_price=${Number(minPrice)}`;
       if (maxPrice) endpoint += `&max_price=${Number(maxPrice)}`;
@@ -405,7 +405,7 @@ export default function InventoryPage() {
                 <div className="p-2 text-sm text-gray-500">No categories found</div>
               ) : (
                 filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.name}>
+                  <SelectItem key={cat.id} value={cat.displayPath}>
                     <span className={cat.level > 0 ? "text-gray-600" : ""}>
                       {cat.displayPath}
                     </span>
