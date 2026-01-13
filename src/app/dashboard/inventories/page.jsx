@@ -208,24 +208,21 @@ export default function InventoryPage() {
   }, []);
 
   // Helper function to flatten nested categories with full paths
-  const flattenCategories = (categories, parentPath = "") => {
+  const flattenCategories = (categories) => {
     let flattened = [];
 
     for (const cat of categories) {
-      // Use the category's path field if available, otherwise build it
-      const displayPath = cat.path || (parentPath ? `${parentPath} > ${cat.name}` : cat.name);
-
       flattened.push({
         id: cat.id,
         name: cat.name,
-        displayPath: displayPath,
-        level: parentPath ? parentPath.split(" > ").length : 0
+        path: cat.path, // Use the actual path from database
+        displayPath: cat.path || cat.name,
+        level: cat.path ? cat.path.split('/').length - 1 : 0
       });
 
       // Recursively flatten children
       if (cat.children && cat.children.length > 0) {
-        const childPath = cat.path || (parentPath ? `${parentPath} > ${cat.name}` : cat.name);
-        flattened = flattened.concat(flattenCategories(cat.children, childPath));
+        flattened = flattened.concat(flattenCategories(cat.children));
       }
     }
 
@@ -238,7 +235,7 @@ export default function InventoryPage() {
       try {
         const { data, error } = await request({
           method: "GET",
-          url: "/admin/get-categories",
+          url: "/admin/get-categories?is_our_category=true", // Only fetch "our categories"
           authRequired: true,
         });
 
@@ -292,9 +289,12 @@ export default function InventoryPage() {
     b.brand_name.toLowerCase().includes(brandSearch.toLowerCase())
   );
 
-  const filteredCategories = categories.filter((cat) =>
-    cat.displayPath.toLowerCase().includes(categorySearch.toLowerCase())
-  );
+  const filteredCategories = categories.filter((cat) => {
+    const searchableText = cat.path
+      ? cat.path.split("/").map(w => w.replace(/-/g, " ")).join(" ")
+      : cat.name;
+    return searchableText.toLowerCase().includes(categorySearch.toLowerCase());
+  });
 
   return (
     <div className="p-6">
@@ -405,9 +405,11 @@ export default function InventoryPage() {
                 <div className="p-2 text-sm text-gray-500">No categories found</div>
               ) : (
                 filteredCategories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.displayPath}>
+                  <SelectItem key={cat.id} value={cat.path}>
                     <span className={cat.level > 0 ? "text-gray-600" : ""}>
-                      {cat.displayPath}
+                      {cat.path
+                        ? cat.path.split("/").map(w => w.replace(/-/g, " ")).join(" › ")
+                        : cat.name}
                     </span>
                   </SelectItem>
                 ))
