@@ -20,7 +20,7 @@ export const ROUTE_PATH = {
     ORDERS: "/dashboard/orders",
     INVENTORIES: "/dashboard/inventories",
     VIEW_PRODUCT: "/dashboard/inventories/viewproduct/:id",
-    IMPORT_PRODUCT: "/dashboard/importproduct",
+    // IMPORT_PRODUCT: "/dashboard/importproduct", // Deprecated - moved to plugins page
     CONTENT_AND_POLICIES: "/dashboard/policies",
     ADD_PRODUCT: "/dashboard/inventories/addproduct",
     CATEGORY_MANAGEMENT: "/dashboard/inventories/categorymanagement",

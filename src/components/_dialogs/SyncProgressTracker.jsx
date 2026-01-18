@@ -18,12 +18,14 @@ import { showToast } from "@/components/_ui/toast-utils";
 const LUXURY_VENDOR_ID = "65053474-4e40-44ee-941c-ef5253ea9fc9";
 const POLL_INTERVAL = 3000; // Poll every 3 seconds
 
-const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
+const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = "Luxury-Distribution" }) => {
   const { request } = useAxios();
   const [jobData, setJobData] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isCheckingActiveJob, setIsCheckingActiveJob] = useState(true);
   const hasInitialized = useRef(false);
 
   // Fetch job status
@@ -147,13 +149,24 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
     }
   }, [jobData, request]);
 
-  // Initialize: Check for existing job or start new one
+  // Handle user confirming to start sync
+  const handleConfirmStart = async () => {
+    setShowConfirmation(false);
+    const newJob = await startSync();
+    if (newJob) {
+      setJobData(newJob);
+    }
+  };
+
+  // Initialize: Check for existing job or show confirmation
   useEffect(() => {
     if (!open) {
       // Reset when dialog closes
       hasInitialized.current = false;
       setJobData(null);
       setError(null);
+      setShowConfirmation(false);
+      setIsCheckingActiveJob(true);
       return;
     }
 
@@ -162,12 +175,15 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
     hasInitialized.current = true;
 
     const initialize = async () => {
+      setIsCheckingActiveJob(true);
+
       // If jobId provided, fetch that job
       if (initialJobId) {
         const job = await fetchJobStatus(initialJobId);
         if (job) {
           setJobData(job);
         }
+        setIsCheckingActiveJob(false);
         return;
       }
 
@@ -177,12 +193,11 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
       if (activeJob) {
         // Active job exists, use it
         setJobData(activeJob);
+        setIsCheckingActiveJob(false);
       } else {
-        // No active job, start new one
-        const newJob = await startSync();
-        if (newJob) {
-          setJobData(newJob);
-        }
+        // No active job, show confirmation dialog instead of auto-starting
+        setIsCheckingActiveJob(false);
+        setShowConfirmation(true);
       }
     };
 
@@ -286,12 +301,14 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-yellow-800 uppercase tracking-wide">
               <RefreshCw className="h-4 w-4" />
-              Luxury-Distribution Sync
+              {vendorName} Sync
             </div>
             {getStatusBadge()}
           </div>
           <CardTitle className="text-2xl font-semibold text-gray-900">
-            {isStarting ? "Starting sync..." : "Product Sync Progress"}
+            {isCheckingActiveJob ? "Checking for active sync..." :
+             showConfirmation ? "Start New Sync" :
+             isStarting ? "Starting sync..." : "Product Sync Progress"}
           </CardTitle>
           {jobData && (
             <p className="text-sm text-gray-500">
@@ -309,8 +326,55 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null }) => {
             </div>
           )}
 
+          {/* Checking Active Job State */}
+          {isCheckingActiveJob && (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-yellow-700" />
+              <p className="text-sm text-gray-600">Checking for active sync job...</p>
+            </div>
+          )}
+
+          {/* Confirmation Dialog - Show before starting new sync */}
+          {showConfirmation && !isCheckingActiveJob && (
+            <div className="space-y-6">
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  This will start a new sync job for <strong>{vendorName}</strong>.
+                  All products will be fetched from the vendor API and synced with your database.
+                </p>
+                <p className="text-sm text-yellow-700 mt-2">
+                  Products not found in the sync will be marked as inactive.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={handleClose}
+                  className="sm:min-w-[130px]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmStart}
+                  disabled={isStarting}
+                  className="bg-yellow-700 text-white hover:bg-yellow-800 sm:min-w-[130px]"
+                >
+                  {isStarting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Starting...
+                    </span>
+                  ) : (
+                    "Start Sync"
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Loading State */}
-          {isStarting && (
+          {isStarting && !showConfirmation && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-yellow-700" />
             </div>

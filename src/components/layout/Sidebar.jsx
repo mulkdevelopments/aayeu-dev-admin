@@ -74,11 +74,12 @@ const sidebarRoutes = [
     path: ROUTE_PATH.DASHBOARD.COUNTRIES,
     icon: <Globe size={18} />,
   },
-  {
-    label: "Import Product",
-    path: ROUTE_PATH.DASHBOARD.IMPORT_PRODUCT,
-    icon: <Boxes size={18} />,
-  },
+  // Import Product removed - sync moved to Plugins page
+  // {
+  //   label: "Import Product",
+  //   path: ROUTE_PATH.DASHBOARD.IMPORT_PRODUCT,
+  //   icon: <Boxes size={18} />,
+  // },
   {
     label: "Content & Policies",
     path: ROUTE_PATH.DASHBOARD.CONTENT_AND_POLICIES,

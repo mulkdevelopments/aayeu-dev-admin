@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,9 @@ import { Spinner } from "@/components/_ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import useAxios from "@/hooks/useAxios";
 import { showToast } from "@/components/_ui/toast-utils";
+import SyncProgressTracker from "@/components/_dialogs/SyncProgressTracker";
+
+const LUXURY_VENDOR_ID = "65053474-4e40-44ee-941c-ef5253ea9fc9";
 
 export default function VendorDetailPage() {
   const params = useParams();
@@ -19,14 +22,39 @@ export default function VendorDetailPage() {
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [productStats, setProductStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   const vendorId = params.id;
 
   useEffect(() => {
     if (vendorId) {
       fetchVendorDetails();
+      fetchProductStats();
     }
   }, [vendorId]);
+
+  const fetchProductStats = async () => {
+    setStatsLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "GET",
+        url: `/admin/vendor-product-stats/${vendorId}`,
+        authRequired: true,
+      });
+
+      if (error) throw new Error(error?.message || error);
+
+      if (data?.success) {
+        setProductStats(data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching product stats:", err.message);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchVendorDetails = async () => {
     setLoading(true);
@@ -311,7 +339,24 @@ export default function VendorDetailPage() {
                 </p>
               </div>
 
-            
+              {/* Sync Button for API vendors */}
+              {vendor.integration_type === "api" && vendorId === LUXURY_VENDOR_ID && (
+                <div className="pt-4 border-t">
+                  <Button
+                    onClick={() => setSyncDialogOpen(true)}
+                    className="w-full bg-yellow-700 text-white hover:bg-yellow-800"
+                    disabled={!isActive}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Sync Products
+                  </Button>
+                  {!isActive && (
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Enable the plugin to sync products
+                    </p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -342,9 +387,63 @@ export default function VendorDetailPage() {
             </CardContent>
           </Card>
 
-       
+          {/* Product Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Statistics</CardTitle>
+              <CardDescription>Products from this vendor</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Spinner className="h-6 w-6" />
+                </div>
+              ) : productStats ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Total Products</span>
+                    <span className="font-semibold text-gray-900">{productStats.totalProducts || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Active Products</span>
+                    <Badge className="bg-green-600">{productStats.activeProducts || 0}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Inactive Products</span>
+                    <Badge className="bg-gray-500">{productStats.inactiveProducts || 0}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Total Variants</span>
+                    <span className="font-semibold text-gray-900">{productStats.totalVariants || 0}</span>
+                  </div>
+                  {productStats.lastSync && (
+                    <div className="pt-2 border-t">
+                      <p className="text-xs text-gray-500">
+                        Last Sync: {new Date(productStats.lastSync.completedAt).toLocaleString("en-GB", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No product data available</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Sync Progress Tracker Modal */}
+      <SyncProgressTracker
+        open={syncDialogOpen}
+        onClose={() => setSyncDialogOpen(false)}
+        vendorName={vendor?.name || "Luxury-Distribution"}
+      />
     </div>
   );
 }

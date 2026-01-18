@@ -474,7 +474,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                           />
                         </div>
                       )}
-                      {product.variants?.[0]?.images?.map((img, idx) => (
+                      {/* {product.variants?.[0]?.images?.map((img, idx) => (
                         <div key={idx} className="relative w-full h-40">
                           <Image
                             width={100}
@@ -484,7 +484,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                             className="object-cover rounded-md shadow-md"
                           />
                         </div>
-                      ))}
+                      ))} */}
                     </div>
 
                     {product.variants?.length > 0 && (
