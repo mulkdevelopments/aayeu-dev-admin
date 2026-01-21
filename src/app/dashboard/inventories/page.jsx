@@ -7,7 +7,7 @@ import useAxios from "@/hooks/useAxios";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/components/_ui/toast-utils";
 import { debounce } from "lodash";
-import { Eye } from "lucide-react";
+import { Eye, Check, Loader2 } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -52,6 +52,14 @@ export default function InventoryPage() {
   const [jumpToPage, setJumpToPage] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [aiSuggestionsByProduct, setAiSuggestionsByProduct] = useState({});
+  const [aiLoadingByProduct, setAiLoadingByProduct] = useState({});
+  const [bulkAcceptLoading, setBulkAcceptLoading] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    mapped: 0,
+    inactive: 0,
+  });
 
   const [state, setState] = useState({
     searchValue: "",
@@ -109,6 +117,11 @@ export default function InventoryPage() {
       // Categories are now loaded separately on mount, don't overwrite them
 
       setTotalPages(data?.data?.total_pages || 1);
+      setStats({
+        total: data?.data?.total || 0,
+        mapped: data?.data?.mapped_total || 0,
+        inactive: data?.data?.inactive_total || 0,
+      });
     } catch (err) {
       console.error("Error fetching products:", err);
       showToast("error", err.message);
@@ -119,6 +132,96 @@ export default function InventoryPage() {
 
   // 🔄 Refresh
   const handleRefresh = () => setKeyRefresh((prev) => prev + 1);
+
+  const fetchSuggestionForProduct = async (productId) => {
+    if (!productId) return;
+    if (aiLoadingByProduct[productId] || aiSuggestionsByProduct.hasOwnProperty(productId)) {
+      return;
+    }
+
+    setAiLoadingByProduct((prev) => ({ ...prev, [productId]: true }));
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/ai-category-suggestions",
+        payload: { productId },
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      const suggestion = data?.data?.suggestions?.[0] || null;
+      setAiSuggestionsByProduct((prev) => ({ ...prev, [productId]: suggestion }));
+    } catch (err) {
+      setAiSuggestionsByProduct((prev) => ({ ...prev, [productId]: null }));
+    } finally {
+      setAiLoadingByProduct((prev) => ({ ...prev, [productId]: false }));
+    }
+  };
+
+  const handleAcceptSuggestion = async (productId, categoryId) => {
+    if (!productId || !categoryId) return;
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/map-product-directly-to-category",
+        payload: {
+          our_category_id: categoryId,
+          product_ids: [productId],
+        },
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      showToast("success", data?.message || "Product mapped successfully");
+      handleRefresh();
+    } catch (err) {
+      showToast("error", err?.message || "Failed to map product");
+    }
+  };
+
+  const handleBulkAcceptSuggestions = async () => {
+    if (bulkAcceptLoading) return;
+
+    const eligible = products.filter(
+      (p) =>
+        !(p.mapped_category || p.mapped_categories?.length > 0) &&
+        aiSuggestionsByProduct[p.id]?.category_id
+    );
+
+    if (eligible.length === 0) {
+      showToast("error", "No suggestions available to accept on this page.");
+      return;
+    }
+
+    const grouped = eligible.reduce((acc, product) => {
+      const suggestion = aiSuggestionsByProduct[product.id];
+      if (!suggestion?.category_id) return acc;
+      if (!acc[suggestion.category_id]) acc[suggestion.category_id] = [];
+      acc[suggestion.category_id].push(product.id);
+      return acc;
+    }, {});
+
+    setBulkAcceptLoading(true);
+    try {
+      const entries = Object.entries(grouped);
+      for (const [categoryId, productIds] of entries) {
+        const { error } = await request({
+          method: "POST",
+          url: "/admin/map-product-directly-to-category",
+          payload: {
+            our_category_id: categoryId,
+            product_ids: productIds,
+          },
+          authRequired: true,
+        });
+        if (error) throw new Error(error?.message || error);
+      }
+      showToast("success", "All suggestions applied successfully.");
+      handleRefresh();
+    } catch (err) {
+      showToast("error", err?.message || "Failed to apply suggestions.");
+    } finally {
+      setBulkAcceptLoading(false);
+    }
+  };
 
   // 🔍 Debounced Search
   const debounceSearch = useCallback(
@@ -179,6 +282,21 @@ export default function InventoryPage() {
   useEffect(() => {
     fetchProducts();
   }, [currentPage, keyRefresh, searchQuery, state.filters]);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!products?.length) return;
+      const unmapped = products.filter(
+        (p) => !(p.mapped_category || p.mapped_categories?.length > 0)
+      );
+      const targets = unmapped.slice(0, 10);
+      for (const p of targets) {
+        await fetchSuggestionForProduct(p.id);
+      }
+    };
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [products]);
 
   // Fetch Vendors for dropdown
   useEffect(() => {
@@ -330,6 +448,15 @@ export default function InventoryPage() {
 
           <Button
             variant="default"
+            className="w-full sm:w-auto lg:w-auto bg-emerald-600 hover:bg-emerald-700"
+            onClick={handleBulkAcceptSuggestions}
+            disabled={bulkAcceptLoading}
+          >
+            {bulkAcceptLoading ? "Applying..." : "Accept All Suggestions"}
+          </Button>
+
+          <Button
+            variant="default"
             className="w-full sm:w-auto lg:w-auto"
             onClick={handleRefresh}
           >
@@ -343,6 +470,21 @@ export default function InventoryPage() {
           >
             Add Single Product
           </Button> */}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        <div className="bg-white border rounded-lg p-3">
+          <div className="text-xs text-gray-500">Total Products</div>
+          <div className="text-xl font-semibold text-gray-900">{stats.total}</div>
+        </div>
+        <div className="bg-white border rounded-lg p-3">
+          <div className="text-xs text-gray-500">Mapped Products</div>
+          <div className="text-xl font-semibold text-emerald-700">{stats.mapped}</div>
+        </div>
+        <div className="bg-white border rounded-lg p-3">
+          <div className="text-xs text-gray-500">Inactive Products</div>
+          <div className="text-xl font-semibold text-red-600">{stats.inactive}</div>
         </div>
       </div>
 
@@ -721,12 +863,45 @@ export default function InventoryPage() {
       </Badge>
     ))
   ) : (
+    <div className="flex flex-col items-center gap-2">
       <Badge
-                            variant="destructive"
-                            className="bg-orange-500 hover:bg-orange-600 text-white"
-                          >
-                            Not Mapped
-                          </Badge>
+        variant="destructive"
+        className="bg-orange-500 hover:bg-orange-600 text-white"
+      >
+        Not Mapped
+      </Badge>
+      {aiLoadingByProduct[product.id] ? (
+        <div className="inline-flex items-center gap-2 px-2 py-1 bg-pink-50 border border-pink-300 rounded-full text-xs text-pink-700">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Suggesting...
+        </div>
+      ) : aiSuggestionsByProduct[product.id] ? (
+        <div className="inline-flex items-center gap-2 px-2 py-1 bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-400 rounded-full text-xs">
+          <span className="text-pink-800 font-medium">
+            {aiSuggestionsByProduct[product.id].category_path || aiSuggestionsByProduct[product.id].category_name}
+          </span>
+          <button
+            onClick={() =>
+              handleAcceptSuggestion(
+                product.id,
+                aiSuggestionsByProduct[product.id].category_id
+              )
+            }
+            className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded-full"
+            title="Accept suggestion"
+          >
+            <Check className="h-3 w-3" />
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => fetchSuggestionForProduct(product.id)}
+          className="text-xs text-pink-700 underline"
+        >
+          Get suggestion
+        </button>
+      )}
+    </div>
   )}
 </TableCell>
 

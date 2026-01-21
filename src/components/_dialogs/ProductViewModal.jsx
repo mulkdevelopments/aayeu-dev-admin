@@ -50,6 +50,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
   const [acceptingId, setAcceptingId] = useState(null);
+  const [aiHasFetched, setAiHasFetched] = useState(false);
 
   const fetchProduct = async () => {
     if (!productId) return;
@@ -127,6 +128,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
       setAiError(err.message || "Failed to get AI suggestions");
     } finally {
       setAiLoading(false);
+      setAiHasFetched(true);
     }
   };
 
@@ -380,6 +382,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
       setPriceValues({});
       setAiSuggestions([]);
       setAiError(null);
+      setAiHasFetched(false);
     }
   }, [open]);
 
@@ -400,99 +403,6 @@ const ProductViewModal = ({ open, onClose, productId }) => {
               </DialogHeader>
 
               <div className="space-y-3">
-                {/* AI Category Suggestions Section */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-purple-600" />
-                      <h3 className="font-semibold text-purple-900">AI Category Suggestions</h3>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchAISuggestions}
-                      disabled={aiLoading}
-                      className="text-xs"
-                    >
-                      {aiLoading ? (
-                        <>
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          Get Suggestions
-                        </>
-                      )}
-                    </Button>
-                  </div>
-
-                  {aiLoading ? (
-                    <div className="flex items-center gap-3 py-4">
-                      <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
-                      <span className="text-sm text-purple-700">Analyzing product and finding best category matches...</span>
-                    </div>
-                  ) : aiError ? (
-                    <div className="text-sm text-red-600 py-2">
-                      {aiError}
-                    </div>
-                  ) : aiSuggestions.length > 0 ? (
-                    <div className="space-y-2">
-                      {aiSuggestions.map((suggestion) => (
-                        <div
-                          key={suggestion.category_id}
-                          className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${getConfidenceColor(suggestion.confidence)}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${getConfidenceBadgeColor(suggestion.confidence)}`}>
-                                {suggestion.confidence}%
-                              </span>
-                              <span className="font-semibold text-sm">
-                                {suggestion.category_name}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs opacity-80 flex-wrap">
-                              {suggestion.category_path?.split(' > ').map((segment, idx, arr) => (
-                                <span key={idx} className="flex items-center">
-                                  <span className="font-medium">{segment}</span>
-                                  {idx < arr.length - 1 && (
-                                    <ChevronRight className="h-3 w-3 mx-1" />
-                                  )}
-                                </span>
-                              ))}
-                            </div>
-                            <p className="text-xs italic mt-1 opacity-75">{suggestion.reason}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="ml-3 bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => handleAcceptSuggestion(suggestion.category_id)}
-                            disabled={acceptingId === suggestion.category_id}
-                          >
-                            {acceptingId === suggestion.category_id ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                Mapping...
-                              </>
-                            ) : (
-                              <>
-                                <Check className="h-4 w-4 mr-1" />
-                                Accept
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-purple-600 py-2">
-                      Click "Get Suggestions" to analyze this product and get AI-powered category recommendations.
-                    </p>
-                  )}
-                </div>
-
                 <Card className="shadow-md border border-yellow-600">
                   <CardContent className="space-y-3 pt-4">
                     <div className="flex justify-between items-center gap-3 flex-wrap border-b pb-3">
@@ -574,15 +484,40 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                         : product?.mapped_category
                           ? [product.mapped_category]
                           : [];
-
-                      if (categories.length === 0) return null;
+                      const mappedIds = new Set(categories.map((c) => c.id));
 
                       return (
                         <div>
-                          <h2 className="font-semibold text-black mb-2 text-sm">
+                          <div className="flex items-center justify-between mb-2">
+                            <h2 className="font-semibold text-black text-sm">
                             {categories.length > 1 ? "Mapped Categories:" : "Mapped Category:"}
-                          </h2>
+                            </h2>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={fetchAISuggestions}
+                              disabled={aiLoading}
+                              className="text-xs"
+                            >
+                              {aiLoading ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Analyzing...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  Get Suggestions
+                                </>
+                              )}
+                            </Button>
+                          </div>
                           <div className="flex flex-wrap gap-2">
+                            {categories.length === 0 && (
+                              <div className="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg text-sm text-gray-600">
+                                No mapped category yet
+                              </div>
+                            )}
                             {categories.map((category) => (
                               <div
                                 key={category.id}
@@ -619,6 +554,101 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                                 </button>
                               </div>
                             ))}
+
+                            {aiLoading && (
+                              <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
+                                <Loader2 className="h-4 w-4 animate-spin text-pink-600" />
+                                <span className="text-pink-700 text-xs">Analyzing suggestions...</span>
+                              </div>
+                            )}
+                            {!aiLoading && aiError && (
+                              <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
+                                <span className="text-pink-700 text-xs">{aiError}</span>
+                              </div>
+                            )}
+                            {!aiLoading && aiSuggestions.length > 0 && (
+                              aiSuggestions.map((suggestion) => {
+                                const isAlreadyMapped = mappedIds.has(suggestion.category_id);
+                                const containerClass = isAlreadyMapped
+                                  ? "bg-gradient-to-r from-green-50 to-green-100 border-green-400"
+                                  : "bg-gradient-to-r from-pink-50 to-pink-100 border-pink-400";
+                                const badgeClass = isAlreadyMapped ? "bg-green-600" : "bg-pink-500";
+                                const textClass = isAlreadyMapped ? "text-green-900" : "text-pink-900";
+                                const pathClass = isAlreadyMapped ? "text-green-800" : "text-pink-800";
+                                const pathSegmentClass = isAlreadyMapped ? "text-green-700" : "text-pink-700";
+                                const chevronClass = isAlreadyMapped ? "text-green-600" : "text-pink-600";
+                                const reasonClass = isAlreadyMapped ? "text-[11px] italic text-green-700" : "text-[11px] italic text-pink-700";
+                                return (
+                                  <div
+                                    key={suggestion.category_id}
+                                    className={`inline-flex items-center gap-2 px-3 py-2 border-2 rounded-lg text-sm ${containerClass}`}
+                                  >
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${badgeClass}`}>
+                                          {suggestion.confidence}%
+                                        </span>
+                                        <span className={`font-semibold ${textClass}`}>
+                                          {suggestion.category_name}
+                                        </span>
+                                        {isAlreadyMapped && (
+                                          <span className="text-[11px] font-semibold text-green-700">
+                                            Already mapped
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className={`flex items-center gap-1 text-xs ${pathClass}`}>
+                                        <span className="font-medium opacity-75">Path:</span>
+                                        {suggestion.category_path ? (
+                                          <span className="flex items-center gap-1">
+                                            {suggestion.category_path.split(" > ").map((segment, idx, arr) => (
+                                              <span key={idx} className="flex items-center">
+                                                <span className={`font-medium capitalize ${pathSegmentClass}`}>{segment}</span>
+                                                {idx < arr.length - 1 && (
+                                                  <ChevronRight className={`h-3 w-3 mx-1 ${chevronClass}`} />
+                                                )}
+                                              </span>
+                                            ))}
+                                          </span>
+                                        ) : (
+                                          <span className="italic">N/A</span>
+                                        )}
+                                      </div>
+                                      {suggestion.reason && (
+                                        <span className={reasonClass}>{suggestion.reason}</span>
+                                      )}
+                                    </div>
+                                    {!isAlreadyMapped && (
+                                      <Button
+                                        size="sm"
+                                        className="ml-2 bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={() => handleAcceptSuggestion(suggestion.category_id)}
+                                        disabled={acceptingId === suggestion.category_id}
+                                      >
+                                        {acceptingId === suggestion.category_id ? (
+                                          <>
+                                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                            Mapping...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Check className="h-4 w-4 mr-1" />
+                                            Accept
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+                            {!aiLoading && aiSuggestions.length === 0 && aiHasFetched && !aiError && (
+                              <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
+                                <span className="text-pink-700 text-xs">
+                                  No suggestions found. Try again or check vendor category/path.
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
