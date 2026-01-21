@@ -13,10 +13,22 @@ import { Spinner } from "@/components/_ui/spinner";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { PencilIcon, X, RefreshCw, ChevronRight, Check } from "lucide-react";
+import { PencilIcon, X, RefreshCw, ChevronRight, Check, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MapProductCategoryDialog from "@/components/_dialogs/MapProductCategoryDialog";
+
+const getConfidenceColor = (confidence) => {
+  if (confidence >= 85) return "bg-green-100 border-green-500 text-green-800";
+  if (confidence >= 70) return "bg-yellow-100 border-yellow-500 text-yellow-800";
+  return "bg-orange-100 border-orange-500 text-orange-800";
+};
+
+const getConfidenceBadgeColor = (confidence) => {
+  if (confidence >= 85) return "bg-green-500";
+  if (confidence >= 70) return "bg-yellow-500";
+  return "bg-orange-500";
+};
 
 const ProductViewModal = ({ open, onClose, productId }) => {
   const { request } = useAxios();
@@ -32,6 +44,12 @@ const ProductViewModal = ({ open, onClose, productId }) => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [liveStockData, setLiveStockData] = useState(null);
   const [stockCheckLoading, setStockCheckLoading] = useState(false);
+
+  // AI Suggestions state
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
+  const [acceptingId, setAcceptingId] = useState(null);
 
   const fetchProduct = async () => {
     if (!productId) return;
@@ -83,6 +101,63 @@ const ProductViewModal = ({ open, onClose, productId }) => {
       setLiveStockData({ stockBySize: [], totalStock: 0, error: true });
     } finally {
       setStockCheckLoading(false);
+    }
+  };
+
+  const fetchAISuggestions = async () => {
+    if (!productId) return;
+
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/ai-category-suggestions",
+        payload: { productId },
+        authRequired: true,
+      });
+
+      if (error) throw new Error(error?.message || error);
+
+      if (data?.success && data?.data?.suggestions) {
+        setAiSuggestions(data.data.suggestions);
+      }
+    } catch (err) {
+      console.error("Error fetching AI suggestions:", err);
+      setAiError(err.message || "Failed to get AI suggestions");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAcceptSuggestion = async (categoryId) => {
+    if (!productId || !categoryId) return;
+
+    setAcceptingId(categoryId);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/map-product-directly-to-category",
+        payload: {
+          our_category_id: categoryId,
+          product_ids: [productId],
+        },
+        authRequired: true,
+      });
+
+      if (error) throw new Error(error?.message || error);
+
+      showToast("success", data?.message || "Product mapped successfully");
+
+      // Refresh product data to show new mapping
+      await fetchProduct();
+      // Clear the accepted suggestion from the list
+      setAiSuggestions(prev => prev.filter(s => s.category_id !== categoryId));
+    } catch (err) {
+      console.error("Error mapping product:", err);
+      showToast("error", err.message || "Failed to map product");
+    } finally {
+      setAcceptingId(null);
     }
   };
 
@@ -291,6 +366,8 @@ const ProductViewModal = ({ open, onClose, productId }) => {
   useEffect(() => {
     if (open && productId) {
       fetchProduct();
+      // Auto-fetch AI suggestions when modal opens
+      fetchAISuggestions();
     }
   }, [open, productId]);
 
@@ -301,6 +378,8 @@ const ProductViewModal = ({ open, onClose, productId }) => {
       setLiveStockData(null);
       setEditingPrice({});
       setPriceValues({});
+      setAiSuggestions([]);
+      setAiError(null);
     }
   }, [open]);
 
@@ -321,6 +400,99 @@ const ProductViewModal = ({ open, onClose, productId }) => {
               </DialogHeader>
 
               <div className="space-y-3">
+                {/* AI Category Suggestions Section */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-purple-600" />
+                      <h3 className="font-semibold text-purple-900">AI Category Suggestions</h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchAISuggestions}
+                      disabled={aiLoading}
+                      className="text-xs"
+                    >
+                      {aiLoading ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Get Suggestions
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {aiLoading ? (
+                    <div className="flex items-center gap-3 py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+                      <span className="text-sm text-purple-700">Analyzing product and finding best category matches...</span>
+                    </div>
+                  ) : aiError ? (
+                    <div className="text-sm text-red-600 py-2">
+                      {aiError}
+                    </div>
+                  ) : aiSuggestions.length > 0 ? (
+                    <div className="space-y-2">
+                      {aiSuggestions.map((suggestion) => (
+                        <div
+                          key={suggestion.category_id}
+                          className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${getConfidenceColor(suggestion.confidence)}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${getConfidenceBadgeColor(suggestion.confidence)}`}>
+                                {suggestion.confidence}%
+                              </span>
+                              <span className="font-semibold text-sm">
+                                {suggestion.category_name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs opacity-80 flex-wrap">
+                              {suggestion.category_path?.split(' > ').map((segment, idx, arr) => (
+                                <span key={idx} className="flex items-center">
+                                  <span className="font-medium">{segment}</span>
+                                  {idx < arr.length - 1 && (
+                                    <ChevronRight className="h-3 w-3 mx-1" />
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                            <p className="text-xs italic mt-1 opacity-75">{suggestion.reason}</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            className="ml-3 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleAcceptSuggestion(suggestion.category_id)}
+                            disabled={acceptingId === suggestion.category_id}
+                          >
+                            {acceptingId === suggestion.category_id ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                                Mapping...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4 mr-1" />
+                                Accept
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-purple-600 py-2">
+                      Click "Get Suggestions" to analyze this product and get AI-powered category recommendations.
+                    </p>
+                  )}
+                </div>
+
                 <Card className="shadow-md border border-yellow-600">
                   <CardContent className="space-y-3 pt-4">
                     <div className="flex justify-between items-center gap-3 flex-wrap border-b pb-3">
@@ -474,17 +646,6 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                           />
                         </div>
                       )}
-                      {/* {product.variants?.[0]?.images?.map((img, idx) => (
-                        <div key={idx} className="relative w-full h-40">
-                          <Image
-                            width={100}
-                            height={100}
-                            src={img}
-                            alt={`${product.name} variant`}
-                            className="object-cover rounded-md shadow-md"
-                          />
-                        </div>
-                      ))} */}
                     </div>
 
                     {product.variants?.length > 0 && (

@@ -1,0 +1,401 @@
+ {
+    "Womenswear": {
+      "New in": {
+        "What's New": [
+          "New in today",
+          "New clothing",
+          "New shoes",
+          "New bags",
+          "New accessories"
+        ],
+        "Trending Now": [
+          "Ski & après-ski",
+          "Back to work",
+          "Valentine’s gifting",
+          "Date-night looks",
+          "Sports luxe",
+          "Modern romance",
+          "Earth tones",
+          "Bright & bold bags",
+          "Color of the year",
+          "Carnival",
+          "Light layers"
+        ],
+        "Discover": [
+          "Most-wanted pieces",
+          "Wardrobe staples",
+          "Partywear",
+          "The new-season forecast",
+          "Winter sun",
+          "Iconic bags",
+          "Matching sets",
+          "The wedding guests",
+          "Bridal",
+          "Exclusives"
+        ]
+      },
+      "Brands": {
+        "Iconic Brands": [
+          "Dolce & Gabbana",
+          "Prada",
+          "Miu Miu",
+          "Valentino Garavani",
+          "Jacquemus",
+          "Chloé",
+          "Jimmy Choo",
+          "Pucci",
+          "Fendi",
+          "Versace",
+          "Max Mara",
+          "Etro",
+          "Stella McCartney",
+          "Marc Jacobs"
+        ],
+        "Contemporary Brands": [
+          "Tory Burch",
+          "Sandro",
+          "Self-portrait",
+          "Diesel",
+          "Ganni"
+        ],
+        "Spotlight On": [
+          "GOLDBERGH"
+        ]
+      },
+      "Clothing": {
+        "Clothing": [
+          "Dresses",
+          "Tops",
+          "Knitwear",
+          "Jackets",
+          "Coats",
+          "Skiwear",
+          "Trousers",
+          "Skirts",
+          "Denim",
+          "Activewear",
+          "Lingerie & Nightwear",
+          "Beachwear"
+        ],
+        "Discover": [
+          "New clothing",
+          "Wardrobe staples",
+          "Ski and après",
+          "The new-season forecast",
+          "Matching sets",
+          "Bridal",
+          "Wedding guest",
+          "Partywear",
+          "Light layers",
+          "Winter Sun"
+        ],
+        "Our Sustainable Services": [
+          "Pre-owned"
+        ]
+      },
+      "Shoes": {
+        "Shoes": [
+          "Sneakers",
+          "Boots",
+          "Pumps",
+          "Loafers",
+          "Ballet flats",
+          "Mules",
+          "Slippers",
+          "Sandals",
+          "Slides & flip flops",
+          "Espadrilles"
+        ],
+        "Discover": [
+          "New shoes",
+          "Slim-sole sneakers",
+          "Luxe loafers"
+        ]
+      },
+      "Bags": {
+        "Bags": [
+          "Tote bags",
+          "Shoulder bags",
+          "Cross-body bags",
+          "Mini bags",
+          "Clutches",
+          "Bucket bags",
+          "Backpacks",
+          "Beach bags",
+          "Luggage & holdalls"
+        ],
+        "Discover": [
+          "New bags",
+          "Iconic bags",
+          "Workwear totes",
+          "Bright & bold bags",
+          "Pre-owned bags"
+        ],
+        "Iconic Lines": [
+          "Alaïa Le Teckel",
+          "Acne Studios Camero",
+          "Chloé Paddington",
+          "Coach Brooklyn",
+          "Dolce & Gabbana Sicily",
+          "DeMellier New York",
+          "Jacquemus Bambola",
+          "Khaite Simona",
+          "Miu Miu Beau",
+          "Prada Bonnie",
+          "Toteme T-Lock",
+          "Valentino Garavani Viva Superstar"
+        ],
+        "Our Sustainable Services": [
+          "Sell designer bags"
+        ]
+      },
+      "Accessories": {
+        "Accessories": [
+          "Sunglasses",
+          "Belts",
+          "Hats & caps",
+          "Wallets & cardholders",
+          "Scarves",
+          "Glasses & frames",
+          "Hair accessories",
+          "Gloves",
+          "Keyrings & chains",
+          "Make-up bags",
+          "Tech & gadgets"
+        ],
+        "Discover": [
+          "New accessories",
+          "Gifts",
+          "Ski Accessories",
+          "Pre-owned accessories"
+        ]
+      },
+      "Jewelry": {
+        "Fashion Jewelry": [
+          "All fashion jewelry",
+          "Bracelets",
+          "Earrings",
+          "Necklaces",
+          "Rings",
+          "Watches"
+        ],
+        "Fine Jewelry": [
+          "All fine jewelry",
+          "All demi-fine jewelry",
+          "Fine bracelets",
+          "Fine earrings",
+          "Fine necklaces",
+          "Fine rings",
+          "Fine watches",
+          "Pre-owned fine jewelry"
+        ],
+        "Discover": [
+          "Jewellery to love",
+          "Jewelry & watches",
+          "Chopard",
+          "David Yurman",
+          "DE BEERS",
+          "Rolex",
+          "TASAKI",
+          "Van Cleef & Arpels",
+          "Yoko London"
+        ]
+      },
+      "Pre-owned": {
+        "Pre-owned": [
+          "All pre-owned",
+          "Pro-owned accessories",
+          "Bags",
+          "Coats",
+          "Dresses",
+          "Fine Watches",
+          "Jewelry",
+          "Fine Jewelry",
+          "Jackets",
+          "Watches"
+        ],
+        "Brands": [
+          "Cartier",
+          "CHANEL",
+          "Christian Dior",
+          "Fendi",
+          "Goyard",
+          "Hermès",
+          "Louis Vuitton",
+          "Rolex"
+        ],
+        "Discover": [
+          "The pre-owned edit",
+          "Chanel CC Turn-lock",
+          "Dior Saddle",
+          "Lady Dior",
+          "Hermès Birkin",
+          "Hermès Kelly",
+          "Louis Vuitton monogram"
+        ],
+        "Our Sustainable Services": [
+          "Sell designer bags"
+        ]
+      }
+    },
+    "Menswear": {
+      "New in": {
+        "What's New": [
+          "New in today",
+          "New clothing",
+          "New shoes",
+          "New bags & accessories"
+        ],
+        "Trending Now": [
+          "Ski & après-ski",
+          "Workwear staples",
+          "The new-season forecast",
+          "Trending sneakers",
+          "Valentine’s gifting",
+          "Date-night looks",
+          "Relaxed tailoring",
+          "Best of denim",
+          "Color of the year",
+          "Carnival",
+          "Lightweight knits"
+        ],
+        "Discover": [
+          "Most-wanted pieces",
+          "Wardrobe staples",
+          "Partywear",
+          "The vacation edit",
+          "Hype streetwear",
+          "Wedding guest looks",
+          "Exclusives & collabs",
+          "Fashion feed"
+        ]
+      },
+      "Brands": {
+        "Iconic Brands": [
+          "AMI Paris",
+          "Brunello Cucinelli",
+          "Dolce & Gabbana",
+          "Fendi",
+          "Jacquemus",
+          "Moncler",
+          "Off-White",
+          "Polo Ralph Lauren",
+          "Prada",
+          "Tom Ford",
+          "Versace",
+          "Zegna"
+        ],
+        "Contemporary Brands": [
+          "Acne Studios",
+          "Dicsol",
+          "Our Legacy",
+          "Axel Arigato",
+          "Gallery Dept.",
+          "Rhude"
+        ],
+        "Brand Focus": [
+          "MARNI"
+        ]
+      },
+      "Clothing": {
+        "Clothing": [
+          "Jackets",
+          "Sweaters & knitwear",
+          "T-shirts & vests",
+          "Pants",
+          "Jeans",
+          "Shirts",
+          "Coats",
+          "Polo shirts",
+          "Suits",
+          "Shorts",
+          "Swimwear"
+        ],
+        "Discover": [
+          "New clothing",
+          "Ski & après-ski",
+          "The new-season forecast",
+          "Wardrobe staples",
+          "Relaxed tailoring",
+          "Best of denim",
+          "Partywear",
+          "The vacation edit",
+          "Hype streetwear",
+          "Lightweight knits"
+        ]
+      },
+      "Shoes": {
+        "Shoes": [
+          "Sneakers",
+          "Boots",
+          "Loafers",
+          "Derby & Oxford shoes",
+          "Sandals",
+          "Slippers",
+          "Espadrilles"
+        ],
+        "Discover": [
+          "New shoes",
+          "Most wanted sneakers",
+          "Party shoes",
+          "Exclusives & collabs"
+        ],
+        "Iconic Collections": [
+          "Jordan × Travis Scott",
+          "New Balance 9060",
+          "Asics Gel",
+          "Golden Goose Super Star",
+          "Onitsuka Tiger Mexico",
+          "Maison Margiela Replica",
+          "D&G Portofino",
+          "Zegna Triple Stitch"
+        ],
+        "Our Sustainable Services": [
+          "Sell designer bags"
+        ]
+      },
+      "Bags": {
+        "Bags": [
+          "Shoulder bags",
+          "Backpacks",
+          "Messenger bags",
+          "Tote bags",
+          "Belt bags",
+          "Luggage & holdalls"
+        ],
+        "Discover": [
+          "New bags & accessories",
+          "Pre-owned bags"
+        ],
+        "Our Sustainable Services": [
+          "Sell designer bags"
+        ]
+      },
+      "Accessories": {
+        "Accessories": [
+          "Sunglasses",
+          "Hats",
+          "Belts",
+          "Wallets & cardholders",
+          "Scarves",
+          "Ties & bow ties",
+          "Cufflinks",
+          "Tech & gadgets"
+        ],
+        "Jewelry": [
+          "All jewelry",
+          "All fine jewelry",
+          "Bracelets",
+          "Necklaces",
+          "Rings",
+          "Earrings"
+        ],
+        "Discover": [
+          "New accessories & bags",
+          "Gifts",
+          "Ski Accessories",
+          "Pre-owned accessories"
+        ]
+      }
+    }
+  }
