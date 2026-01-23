@@ -10,6 +10,8 @@ const axiosInstance = axios.create({
   // withCredentials: true, // Ensure cookies are sent
   headers: {
     "Content-Type": "application/json", // Default content type
+    "Cache-Control": "no-store",
+    Pragma: "no-cache",
   },
 });
 

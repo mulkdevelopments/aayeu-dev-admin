@@ -285,12 +285,14 @@ export function slugifyProductName(name = "") {
   return kebabCase(toLower(deburr(name))); // removes accents, converts to kebab case
 }
 
-export const generateProductSlug = (text) =>
-  text
+export const generateProductSlug = (text) => {
+  if (text === null || text === undefined) return "";
+  return text
     .toString()
     .toLowerCase()
     .trim()
     .replace(/[\s\W-]+/g, "-");
+};
 
 
 const utilities = {
