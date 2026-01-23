@@ -18,7 +18,14 @@ import { showToast } from "@/components/_ui/toast-utils";
 const LUXURY_VENDOR_ID = "65053474-4e40-44ee-941c-ef5253ea9fc9";
 const POLL_INTERVAL = 3000; // Poll every 3 seconds
 
-const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = "Luxury-Distribution" }) => {
+const SyncProgressTracker = ({
+  open,
+  onClose,
+  initialJobId = null,
+  vendorName = "Luxury-Distribution",
+  vendorId = LUXURY_VENDOR_ID,
+  startSyncUrl = "/admin/get-products-from-luxury",
+}) => {
   const { request } = useAxios();
   const [jobData, setJobData] = useState(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -59,7 +66,7 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = 
     try {
       const { data, error } = await request({
         method: "GET",
-        url: `/admin/vendor-sync-active/${LUXURY_VENDOR_ID}`,
+        url: `/admin/vendor-sync-active/${vendorId}`,
         authRequired: true,
       });
 
@@ -75,7 +82,7 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = 
       console.error("Error checking active job:", err);
       return null;
     }
-  }, [request]);
+  }, [request, vendorId]);
 
   // Start new sync
   const startSync = useCallback(async () => {
@@ -85,7 +92,7 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = 
     try {
       const { data, error } = await request({
         method: "POST",
-        url: "/admin/get-products-from-luxury",
+        url: startSyncUrl,
         authRequired: true,
         payload: {}, // Send empty payload to satisfy backend
       });
@@ -110,7 +117,7 @@ const SyncProgressTracker = ({ open, onClose, initialJobId = null, vendorName = 
     } finally {
       setIsStarting(false);
     }
-  }, [request]);
+  }, [request, startSyncUrl]);
 
   // Cancel sync
   const cancelSync = useCallback(async () => {

@@ -289,7 +289,7 @@ export default function InventoryPage() {
       const unmapped = products.filter(
         (p) => !(p.mapped_category || p.mapped_categories?.length > 0)
       );
-      const targets = unmapped.slice(0, 10);
+      const targets = unmapped.slice(0, 20);
       for (const p of targets) {
         await fetchSuggestionForProduct(p.id);
       }

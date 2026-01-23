@@ -31,7 +31,8 @@
           "Matching sets",
           "The wedding guests",
           "Bridal",
-          "Exclusives"
+          "Exclusives",
+          "Fashion Feed"
         ]
       },
       "Brands": {
@@ -170,28 +171,28 @@
           "Pre-owned accessories"
         ]
       },
-      "Jewelry": {
-        "Fashion Jewelry": [
-          "All fashion jewelry",
+      "Jewellery": {
+        "Fashion Jewellery": [
+          "All fashion Jewellery",
           "Bracelets",
           "Earrings",
           "Necklaces",
           "Rings",
           "Watches"
         ],
-        "Fine Jewelry": [
-          "All fine jewelry",
-          "All demi-fine jewelry",
+        "Fine Jewellery": [
+          "All fine Jewellery",
+          "All demi-fine Jewellery",
           "Fine bracelets",
           "Fine earrings",
           "Fine necklaces",
           "Fine rings",
           "Fine watches",
-          "Pre-owned fine jewelry"
+          "Pre-owned fine Jewellery"
         ],
         "Discover": [
           "Jewellery to love",
-          "Jewelry & watches",
+          "Jewellery & watches",
           "Chopard",
           "David Yurman",
           "DE BEERS",
@@ -209,8 +210,8 @@
           "Coats",
           "Dresses",
           "Fine Watches",
-          "Jewelry",
-          "Fine Jewelry",
+          "Jewellery",
+          "Fine Jewellery",
           "Jackets",
           "Watches"
         ],
@@ -382,9 +383,9 @@
           "Cufflinks",
           "Tech & gadgets"
         ],
-        "Jewelry": [
-          "All jewelry",
-          "All fine jewelry",
+        "Jewellery": [
+          "All Jewellery",
+          "All fine Jewellery",
           "Bracelets",
           "Necklaces",
           "Rings",

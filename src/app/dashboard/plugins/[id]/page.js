@@ -14,6 +14,7 @@ import { showToast } from "@/components/_ui/toast-utils";
 import SyncProgressTracker from "@/components/_dialogs/SyncProgressTracker";
 
 const LUXURY_VENDOR_ID = "65053474-4e40-44ee-941c-ef5253ea9fc9";
+const PEPPELA_VENDOR_ID = "b34fd0f6-815a-469e-b7c2-73f9e8afb3ed";
 
 export default function VendorDetailPage() {
   const params = useParams();
@@ -160,6 +161,15 @@ export default function VendorDetailPage() {
 
   const capabilities = vendor.capabilities || {};
   const isActive = vendor.status === "active";
+
+  const canSyncProducts =
+    vendor.integration_type === "api" && capabilities.has_individual_syncing;
+  const syncConfig =
+    vendor.id === LUXURY_VENDOR_ID
+      ? { url: "/admin/get-products-from-luxury", vendorId: LUXURY_VENDOR_ID }
+      : vendor.id === PEPPELA_VENDOR_ID
+      ? { url: "/admin/get-products-from-peppela", vendorId: PEPPELA_VENDOR_ID }
+      : null;
 
   return (
     <div className="p-6 space-y-6">
@@ -340,7 +350,7 @@ export default function VendorDetailPage() {
               </div>
 
               {/* Sync Button for API vendors */}
-              {vendor.integration_type === "api" && vendorId === LUXURY_VENDOR_ID && (
+              {canSyncProducts && syncConfig && (
                 <div className="pt-4 border-t">
                   <Button
                     onClick={() => setSyncDialogOpen(true)}
@@ -442,7 +452,9 @@ export default function VendorDetailPage() {
       <SyncProgressTracker
         open={syncDialogOpen}
         onClose={() => setSyncDialogOpen(false)}
-        vendorName={vendor?.name || "Luxury-Distribution"}
+        vendorName={vendor?.name || "Vendor"}
+        vendorId={syncConfig?.vendorId || vendor?.id}
+        startSyncUrl={syncConfig?.url}
       />
     </div>
   );
