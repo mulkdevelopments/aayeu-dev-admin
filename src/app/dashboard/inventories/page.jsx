@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { showToast } from "@/components/_ui/toast-utils";
 import { debounce } from "lodash";
 import { Eye, Check, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableHeader,
@@ -31,6 +32,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateProductSlug } from "@/utils/utilities";
 import ProductViewModal from "@/components/_dialogs/ProductViewModal";
+import AutoMapDialog from "@/components/_dialogs/AutoMapDialog";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -60,6 +62,9 @@ export default function InventoryPage() {
     mapped: 0,
     inactive: 0,
   });
+  const [isAutoMapOpen, setIsAutoMapOpen] = useState(false);
+  const [selectedSuggestionIds, setSelectedSuggestionIds] = useState(new Set());
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [state, setState] = useState({
     searchValue: "",
@@ -150,6 +155,13 @@ export default function InventoryPage() {
       if (error) throw new Error(error?.message || error);
       const suggestion = data?.data?.suggestions?.[0] || null;
       setAiSuggestionsByProduct((prev) => ({ ...prev, [productId]: suggestion }));
+      if (suggestion?.category_id) {
+        setSelectedSuggestionIds((prev) => {
+          const next = new Set(prev);
+          next.add(productId);
+          return next;
+        });
+      }
     } catch (err) {
       setAiSuggestionsByProduct((prev) => ({ ...prev, [productId]: null }));
     } finally {
@@ -180,14 +192,15 @@ export default function InventoryPage() {
   const handleBulkAcceptSuggestions = async () => {
     if (bulkAcceptLoading) return;
 
-    const eligible = products.filter(
-      (p) =>
-        !(p.mapped_category || p.mapped_categories?.length > 0) &&
-        aiSuggestionsByProduct[p.id]?.category_id
-    );
+    const eligible = products.filter((p) => {
+      const hasSuggestion = aiSuggestionsByProduct[p.id]?.category_id;
+      const isUnmapped = !(p.mapped_category || p.mapped_categories?.length > 0);
+      const isSelected = selectedSuggestionIds.has(p.id);
+      return isUnmapped && hasSuggestion && isSelected;
+    });
 
     if (eligible.length === 0) {
-      showToast("error", "No suggestions available to accept on this page.");
+      showToast("error", "Select at least one suggestion to accept.");
       return;
     }
 
@@ -220,7 +233,20 @@ export default function InventoryPage() {
       showToast("error", err?.message || "Failed to apply suggestions.");
     } finally {
       setBulkAcceptLoading(false);
+      setSelectedSuggestionIds(new Set());
     }
+  };
+
+  const toggleSuggestionSelection = (productId) => {
+    setSelectedSuggestionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) {
+        next.delete(productId);
+      } else {
+        next.add(productId);
+      }
+      return next;
+    });
   };
 
   // 🔍 Debounced Search
@@ -285,6 +311,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     const run = async () => {
+      if (!showSuggestions) return;
       if (!products?.length) return;
       const unmapped = products.filter(
         (p) => !(p.mapped_category || p.mapped_categories?.length > 0)
@@ -296,7 +323,21 @@ export default function InventoryPage() {
     };
     run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [products]);
+  }, [products, showSuggestions]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("inventory_show_suggestions");
+    if (saved === "true") {
+      setShowSuggestions(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "inventory_show_suggestions",
+      showSuggestions ? "true" : "false"
+    );
+  }, [showSuggestions]);
 
   // Fetch Vendors for dropdown
   useEffect(() => {
@@ -436,6 +477,14 @@ export default function InventoryPage() {
             onChange={handleSearchChange}
           />
 
+          <div className="flex items-center gap-2 px-2">
+            <Switch
+              checked={showSuggestions}
+              onCheckedChange={setShowSuggestions}
+            />
+            <span className="text-sm text-gray-700">Show Suggestions</span>
+          </div>
+
           <Button
             variant="default"
             className="w-full sm:w-auto lg:w-auto "
@@ -450,9 +499,17 @@ export default function InventoryPage() {
             variant="default"
             className="w-full sm:w-auto lg:w-auto bg-emerald-600 hover:bg-emerald-700"
             onClick={handleBulkAcceptSuggestions}
-            disabled={bulkAcceptLoading}
+            disabled={bulkAcceptLoading || !showSuggestions}
           >
-            {bulkAcceptLoading ? "Applying..." : "Accept All Suggestions"}
+            {bulkAcceptLoading ? "Applying..." : "Accept Selected Suggestions"}
+          </Button>
+
+          <Button
+            variant="default"
+            className="w-full sm:w-auto lg:w-auto bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => setIsAutoMapOpen(true)}
+          >
+            Auto Map
           </Button>
 
           <Button
@@ -870,36 +927,47 @@ export default function InventoryPage() {
       >
         Not Mapped
       </Badge>
-      {aiLoadingByProduct[product.id] ? (
-        <div className="inline-flex items-center gap-2 px-2 py-1 bg-pink-50 border border-pink-300 rounded-full text-xs text-pink-700">
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Suggesting...
-        </div>
-      ) : aiSuggestionsByProduct[product.id] ? (
-        <div className="inline-flex items-center gap-2 px-2 py-1 bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-400 rounded-full text-xs">
-          <span className="text-pink-800 font-medium">
-            {aiSuggestionsByProduct[product.id].category_path || aiSuggestionsByProduct[product.id].category_name}
-          </span>
+      {showSuggestions ? (
+        aiLoadingByProduct[product.id] ? (
+          <div className="inline-flex items-center gap-2 px-2 py-1 bg-pink-50 border border-pink-300 rounded-full text-xs text-pink-700">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Suggesting...
+          </div>
+        ) : aiSuggestionsByProduct[product.id] ? (
+          <div className="inline-flex items-center gap-2 px-2 py-1 bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-400 rounded-full text-xs">
+          <input
+            type="checkbox"
+            className="h-3 w-3 accent-pink-600"
+            checked={selectedSuggestionIds.has(product.id)}
+            onChange={() => toggleSuggestionSelection(product.id)}
+            aria-label="Select suggestion"
+          />
+            <span className="text-pink-800 font-medium">
+              {aiSuggestionsByProduct[product.id].category_path || aiSuggestionsByProduct[product.id].category_name}
+            </span>
+            <button
+              onClick={() =>
+                handleAcceptSuggestion(
+                  product.id,
+                  aiSuggestionsByProduct[product.id].category_id
+                )
+              }
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded-full"
+              title="Accept suggestion"
+            >
+              <Check className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
           <button
-            onClick={() =>
-              handleAcceptSuggestion(
-                product.id,
-                aiSuggestionsByProduct[product.id].category_id
-              )
-            }
-            className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded-full"
-            title="Accept suggestion"
+            onClick={() => fetchSuggestionForProduct(product.id)}
+            className="text-xs text-pink-700 underline"
           >
-            <Check className="h-3 w-3" />
+            Get suggestion
           </button>
-        </div>
+        )
       ) : (
-        <button
-          onClick={() => fetchSuggestionForProduct(product.id)}
-          className="text-xs text-pink-700 underline"
-        >
-          Get suggestion
-        </button>
+        <span className="text-xs text-gray-400">Suggestions off</span>
       )}
     </div>
   )}
@@ -1081,6 +1149,11 @@ export default function InventoryPage() {
           setSelectedProductId(null);
         }}
         productId={selectedProductId}
+      />
+
+      <AutoMapDialog
+        open={isAutoMapOpen}
+        onClose={(open) => setIsAutoMapOpen(!!open)}
       />
     </div>
   );

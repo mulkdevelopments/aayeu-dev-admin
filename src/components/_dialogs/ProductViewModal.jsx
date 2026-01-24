@@ -450,10 +450,27 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                     {product.title && <p className="text-gray-600 text-sm">{product.title}</p>}
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm bg-gray-50 p-3 rounded-md">
-                      <p className="text-black"><strong>Category:</strong> {product.categories?.[0]?.name || "N/A"}</p>
+                      <p className="text-black">
+                        <strong>Category:</strong>{" "}
+                        {product.categories?.[0]?.name ||
+                          product.attributes?.category_path ||
+                          "N/A"}
+                      </p>
                       <p className="text-black"><strong>Brand:</strong> {product.brand_name || "N/A"}</p>
                       <p className="text-black"><strong>Vendor:</strong> {product.vendor_name || "N/A"}</p>
-                      <p className="text-black"><strong>Country:</strong> {product.country_of_origin || "N/A"}</p>
+                      <p className="text-black">
+                        <strong>Country:</strong>{" "}
+                        {product.country_of_origin ||
+                          product.product_meta?.made_in ||
+                          "N/A"}
+                      </p>
+                      <p className="text-black">
+                        <strong>Gender:</strong>{" "}
+                        {product.gender ||
+                          product.attributes?.gender ||
+                          product.product_meta?.product_feature_map?.gender ||
+                          "N/A"}
+                      </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-4 bg-blue-50 p-2 rounded-md">
