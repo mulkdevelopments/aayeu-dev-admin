@@ -329,7 +329,7 @@ const MapProductCategoryDialog = ({
 
           <div className="px-6 pb-6 space-y-4">
             {/* AI Suggestions Section */}
-            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+            {/* <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-purple-600" />
@@ -412,7 +412,7 @@ const MapProductCategoryDialog = ({
                   No AI suggestions available. Click refresh to generate suggestions.
                 </p>
               )}
-            </div>
+            </div> */}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <Input
