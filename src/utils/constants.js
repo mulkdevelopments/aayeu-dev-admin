@@ -10,6 +10,7 @@ import {
   RectangleHorizontal,
   Sparkles,
   Star,
+  Tags,
 } from "lucide-react";
 import { Home, Menu } from "lucide-react";
 import { ChartBarStacked } from "lucide-react";
@@ -75,6 +76,14 @@ export const actions = [
     icon: <Image className="w-6 h-6 text-cyan-600" />,
     color: "bg-cyan-50",
     href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BOTTOM_BANNER,
+  },
+  {
+    id: 8,
+    title: "Manage Brand Groups",
+    description: "Create groups and assign brands",
+    icon: <Tags className="w-6 h-6 text-slate-600" />,
+    color: "bg-slate-50",
+    href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
   },
   
 ];
