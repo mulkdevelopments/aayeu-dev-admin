@@ -18,6 +18,7 @@ const AutoMapDialog = ({ open, onClose }) => {
   const [error, setError] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const pollingRef = useRef(null);
+  const hasInitialized = useRef(false);
 
   const stopPolling = () => {
     if (pollingRef.current) {
@@ -116,8 +117,12 @@ const AutoMapDialog = ({ open, onClose }) => {
       setError(null);
       setShowConfirmation(false);
       stopPolling();
+      hasInitialized.current = false;
       return;
     }
+
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
 
     const init = async () => {
       const active = await fetchActiveJob();
@@ -166,7 +171,12 @@ const AutoMapDialog = ({ open, onClose }) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleOpenChange(false);
+      }}
+    >
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Auto Mapping</DialogTitle>
