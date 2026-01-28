@@ -1182,7 +1182,7 @@ export default function InventoryPage() {
 
       <AutoMapDialog
         open={isAutoMapOpen}
-        onClose={(open) => setIsAutoMapOpen(!!open)}
+        onClose={setIsAutoMapOpen}
       />
     </div>
   );

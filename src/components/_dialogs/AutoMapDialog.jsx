@@ -159,8 +159,14 @@ const AutoMapDialog = ({ open, onClose }) => {
     ? Math.min(100, Math.round((job.processed / job.total) * 100))
     : 0;
 
+  const handleOpenChange = (nextOpen) => {
+    if (typeof onClose === "function") {
+      onClose(nextOpen);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Auto Mapping</DialogTitle>
@@ -190,7 +196,7 @@ const AutoMapDialog = ({ open, onClose }) => {
                   </>
                 )}
               </Button>
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
                 Cancel
               </Button>
             </div>
