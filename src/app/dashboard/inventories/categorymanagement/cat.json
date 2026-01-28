@@ -35,47 +35,6 @@
           "Fashion Feed"
         ]
       },
-      "Brands": {
-        "Iconic Brands": [
-        "Dolce & Gabbana",
-        "Prada",
-        "Miu Miu",
-        "Valentino Garavani",
-        "Jacquemus",
-        "Chloe",
-        "Jimmy Choo",
-        "Pucci",
-        "Fendi",
-        "Versace",
-        "Max Mara",
-        "Etro",
-        "Stella McCartney",
-        "Marc Jacobs",
-        "AMI Paris",
-        "Brunello Cucinelli",
-        "Moncler",
-        "Off-White",
-        "Polo Ralph Lauren",
-        "Tom Ford",
-        "Zegna"
-        ],
-        "Contemporary Brands": [
-         "Tory Burch",
-        "Sandro",
-        "Self-portrait",
-        "Diesel",
-        "Ganni",
-        "Acne Studios",
-        "Dicsol",
-        "Our Legacy",
-        "Axel Arigato",
-        "Gallery Dept.",
-        "Rhude"
-        ],
-        "Spotlight On": [
-          "GOLDBERGH"
-        ]
-      },
       "Clothing": {
         "Activewear": [
           "Track Suits"
@@ -211,6 +170,7 @@
         ],
         "Trending Now": [
           "Ski & après-ski",
+          "Polo Shirts",
           "Workwear staples",
           "The new-season forecast",
           "Trending sneakers",
@@ -231,47 +191,6 @@
           "Wedding guest looks",
           "Exclusives & collabs",
           "Fashion feed"
-        ]
-      },
-      "Brands": {
-        "Iconic Brands": [
-          "Dolce & Gabbana",
-          "Prada",
-          "Miu Miu",
-          "Valentino Garavani",
-          "Jacquemus",
-          "Chloe",
-          "Jimmy Choo",
-          "Pucci",
-          "Fendi",
-          "Versace",
-          "Max Mara",
-          "Etro",
-          "Stella McCartney",
-          "Marc Jacobs",
-          "AMI Paris",
-          "Brunello Cucinelli",
-          "Moncler",
-          "Off-White",
-          "Polo Ralph Lauren",
-          "Tom Ford",
-          "Zegna"
-        ],
-        "Contemporary Brands": [
-        "Tory Burch",
-        "Sandro",
-        "Self-portrait",
-        "Diesel",
-        "Ganni",
-        "Acne Studios",
-        "Dicsol",
-        "Our Legacy",
-        "Axel Arigato",
-        "Gallery Dept.",
-        "Rhude"
-        ],
-        "Spotlight On": [
-          "GOLDBERGH"
         ]
       },
       "Clothing": {

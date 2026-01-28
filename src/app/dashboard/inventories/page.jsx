@@ -90,6 +90,29 @@ export default function InventoryPage() {
   const [vendors, setVendors] = useState([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
 
+  const normalizeGenderValue = (value) => {
+    if (!value) return null;
+    const normalized = String(value).trim().toLowerCase();
+    if (["man", "men", "mens"].includes(normalized)) return "men";
+    if (["woman", "women", "womens", "ladies"].includes(normalized)) return "women";
+    if (["boy", "boys"].includes(normalized)) return "boys";
+    if (["girl", "girls"].includes(normalized)) return "girls";
+    if (["kids", "children", "child"].includes(normalized)) return "kids";
+    if (normalized.includes("unisex")) return "unisex";
+    return normalized;
+  };
+
+  const formatGenderLabel = (value) => {
+    if (!value) return "";
+    if (value === "men") return "Men";
+    if (value === "women") return "Women";
+    if (value === "boys") return "Boys";
+    if (value === "girls") return "Girls";
+    if (value === "kids") return "Kids";
+    if (value === "unisex") return "Unisex";
+    return value;
+  };
+
   // 🏷️ Fetch Products
   const fetchProducts = async () => {
     setLoading(true);
@@ -563,9 +586,15 @@ export default function InventoryPage() {
           </SelectTrigger>
           <SelectContent className="max-h-60 overflow-y-auto">
             <SelectItem value="all">All Genders</SelectItem>
-            {[...new Set(products.map((p) => p.gender))].map((gender) => (
+            {[
+              ...new Set(
+                products
+                  .map((p) => normalizeGenderValue(p.gender))
+                  .filter(Boolean)
+              ),
+            ].map((gender) => (
               <SelectItem key={gender} value={gender}>
-                {gender}
+                {formatGenderLabel(gender)}
               </SelectItem>
             ))}
           </SelectContent>
