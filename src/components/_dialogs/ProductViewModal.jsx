@@ -584,7 +584,9 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                               </div>
                             )}
                             {!aiLoading && aiSuggestions.length > 0 && (
-                              aiSuggestions.map((suggestion) => {
+                              [...aiSuggestions]
+                                .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+                                .map((suggestion) => {
                                 const isAlreadyMapped = mappedIds.has(suggestion.category_id);
                                 const containerClass = isAlreadyMapped
                                   ? "bg-gradient-to-r from-green-50 to-green-100 border-green-400"

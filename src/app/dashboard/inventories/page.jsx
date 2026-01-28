@@ -176,7 +176,9 @@ export default function InventoryPage() {
         authRequired: true,
       });
       if (error) throw new Error(error?.message || error);
-      const suggestion = data?.data?.suggestions?.[0] || null;
+      const suggestion = Array.isArray(data?.data?.suggestions) && data.data.suggestions.length > 0
+        ? [...data.data.suggestions].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))[0]
+        : null;
       setAiSuggestionsByProduct((prev) => ({ ...prev, [productId]: suggestion }));
       if (suggestion?.category_id) {
         setSelectedSuggestionIds((prev) => {
