@@ -470,14 +470,16 @@ export default function InventoryPage() {
   }, []);
 
   const filteredBrands = brands.filter((b) =>
-    b.brand_name.toLowerCase().includes(brandSearch.toLowerCase())
+    String(b.brand_name || "").toLowerCase().includes(brandSearch.toLowerCase())
   );
 
   const filteredCategories = categories.filter((cat) => {
     const searchableText = cat.path
       ? cat.path.split("/").map(w => w.replace(/-/g, " ")).join(" ")
       : cat.name;
-    return searchableText.toLowerCase().includes(categorySearch.toLowerCase());
+    return String(searchableText || "")
+      .toLowerCase()
+      .includes(categorySearch.toLowerCase());
   });
 
   return (
