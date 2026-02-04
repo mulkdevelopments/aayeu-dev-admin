@@ -34,11 +34,6 @@ const sidebarRoutes = [
     icon: <Users size={18} />,
   },
   {
-    label: "Plugins",
-    icon: <Plug size={18} />,
-    isPluginMenu: true, // Dynamic submenu for vendors
-  },
-  {
     label: "Orders",
     path: ROUTE_PATH.DASHBOARD.ORDERS,
 
@@ -108,6 +103,11 @@ const sidebarRoutes = [
         path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
       },
     ],
+  },
+  {
+    label: "Plugins",
+    icon: <Plug size={18} />,
+    isPluginMenu: true, // Dynamic submenu for vendors
   },
   {
     label: "Countries",
@@ -223,7 +223,7 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-4 space-y-2 space-x-6 px-2 flex-1">
+        <nav className="mt-4 space-y-2 space-x-6 px-2 flex-1 overflow-y-auto">
           {sidebarRoutes.map((item) => (
             <div key={item.path || item.label}>
               {item.isPluginMenu ? (
