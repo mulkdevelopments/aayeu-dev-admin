@@ -21,7 +21,7 @@ const routeNames = {
   categorymanagement: "Category Management",
   vendors: "Vendors",
   reports: "Reports",
-  settings: "Settings",
+  settings: "Editorials",
   "home-config": "Home Configuration",
   adminprofile: "Admin Profile",
   "manage-top-banner": "Manage Top Banner",
@@ -46,8 +46,10 @@ export default function CustomBreadcrumb({ tail, onOrdersClick }) {
   const pathname = usePathname();
   const rawSegments = pathname.split("/").filter(Boolean);
 
-  // Build filtered segments excluding id-like parts
-  const filteredSegments = rawSegments.filter((seg) => !isIdLikeSegment(seg));
+  // Build filtered segments excluding id-like parts and removed routes
+  const filteredSegments = rawSegments.filter(
+    (seg) => !isIdLikeSegment(seg) && seg !== "home-config"
+  );
 
   const segments = filteredSegments.map((segment, index) => {
     const isLast = index === filteredSegments.length - 1;

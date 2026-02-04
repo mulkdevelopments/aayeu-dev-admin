@@ -4,15 +4,15 @@ import {
   BadgePercent,
   Gift,
   Image,
-  InfoIcon,
   Layers,
   Megaphone,
   RectangleHorizontal,
+  ShieldCheck,
   Sparkles,
   Star,
   Tags,
 } from "lucide-react";
-import { Home, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { ChartBarStacked } from "lucide-react";
 export const ALL_PERMISSIONS = [
   // "supply_management",
@@ -100,22 +100,12 @@ export const settingsCards = [
   //   iconBg: "bg-white",
   // },
   {
-    id: 2,
-    title: "Home Page Config",
-    description: "Customize the home page layout and content",
-    icon: <Home size={28} />,
-    href: "/dashboard/settings/home-config",
-    bgColor: "bg-black",
-    textColor: "text-white",
-    iconBg: "bg-white",
-  },
-  {
     id: 3,
-    title: "About Us",
-    description: "Manage About us page",
-    icon: <InfoIcon className="w-6 h-6 text-pink-600" />,
-    color: "bg-pink-50",
-    href: "/dashboard/settings/about-us",
+    title: "Content & Policies",
+    description: "Manage About Us and policy pages",
+    icon: <ShieldCheck className="w-6 h-6 text-amber-600" />,
+    color: "bg-amber-50",
+    href: "/dashboard/policies",
     bgColor: "bg-black",
     textColor: "text-white",
     iconBg: "bg-white",

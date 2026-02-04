@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { showToast } from "@/components/_ui/toast-utils";
 import useAxios from "@/hooks/useAxios";
+import { InfoIcon } from "lucide-react";
 
 // Jodit rich text editor (loaded only on client)
 const JoditEditor = dynamic(() => import("jodit-react"), {
@@ -203,6 +205,23 @@ export default function PoliciesPage() {
             </button>
           );
         })}
+        <Link
+          href="/dashboard/settings/about-us"
+          className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
+              <InfoIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">About Us</div>
+              <div className="text-xs text-gray-500">
+                Manage About Us page content.
+              </div>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-amber-700">Edit</span>
+        </Link>
       </div>
 
       {/* Editor for selected policy */}

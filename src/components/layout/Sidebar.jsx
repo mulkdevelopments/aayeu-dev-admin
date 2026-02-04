@@ -1,5 +1,5 @@
 "use client";
-import { X, User, Key, LogOut, ShieldCheck } from "lucide-react";
+import { X, User, Key, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
@@ -14,7 +14,7 @@ import {
   ShoppingCart,
   Boxes,
   BarChart3,
-  Settings,
+  Edit,
   FolderTree,
   ChevronDown,
   ChevronRight,
@@ -49,11 +49,6 @@ const sidebarRoutes = [
     path: ROUTE_PATH.DASHBOARD.INVENTORIES,
     icon: <Boxes size={18} />,
   },
-  {
-    label: "Category Management",
-    path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
-    icon: <FolderTree size={18} />,
-  },
   // {
   //   label: "Reports",
   //   path: ROUTE_PATH.DASHBOARD.REPORTS,
@@ -65,9 +60,54 @@ const sidebarRoutes = [
   //   icon: <Users size={18} />,
   // },
   {
-    label: "Settings",
-    path: ROUTE_PATH.DASHBOARD.SETTINGS,
-    icon: <Settings size={18} />,
+    label: "Editorials",
+    icon: <Edit size={18} />,
+    subItems: [
+      {
+        label: "Categories",
+        path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
+      },
+      {
+        label: "Content & Policies",
+        path: ROUTE_PATH.DASHBOARD.CONTENT_AND_POLICIES,
+      },
+      {
+        label: "Coupon Management",
+        path: "/dashboard/settings/coupon-management",
+      },
+      {
+        label: "Manage Top Banner",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_TOP_BANNER,
+      },
+      {
+        label: "Product Overlay",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_PRODUCT_OVERLAY,
+      },
+      {
+        label: "Manage Sale Section",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_SALES,
+      },
+      {
+        label: "Manage Middle Banner",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_MIDDLE_BANNER,
+      },
+      {
+        label: "Manage Best Sellers",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BEST_SELLERS,
+      },
+      {
+        label: "Manage New Arrivals",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS,
+      },
+      {
+        label: "Manage Bottom Banner",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BOTTOM_BANNER,
+      },
+      {
+        label: "Manage Brand Groups",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
+      },
+    ],
   },
   {
     label: "Countries",
@@ -80,11 +120,6 @@ const sidebarRoutes = [
   //   path: ROUTE_PATH.DASHBOARD.IMPORT_PRODUCT,
   //   icon: <Boxes size={18} />,
   // },
-  {
-    label: "Content & Policies",
-    path: ROUTE_PATH.DASHBOARD.CONTENT_AND_POLICIES,
-    icon: <ShieldCheck size={18} />,
-  }
 ];
 
 const user = { name: "Praveen Patel", email: "praveen@example.com" };

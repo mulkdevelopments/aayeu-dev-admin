@@ -126,10 +126,11 @@ export default function NewArrivals() {
       // Merge product details
       const mergedItems = await Promise.all(
         items.map(async (item) => {
-          if (!item.product_name || !item.product_img) {
+          if (!item.product_name || !item.product_img || !item.product_sku) {
             const { data: pdData } = await request({
               method: "GET",
               url: `/admin/get-product-by-id?productId=${item.product_id}`,
+              authRequired: true,
             });
             return {
               ...item,
