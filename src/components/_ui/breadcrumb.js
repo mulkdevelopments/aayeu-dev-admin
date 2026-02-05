@@ -48,7 +48,10 @@ export default function CustomBreadcrumb({ tail, onOrdersClick }) {
 
   // Build filtered segments excluding id-like parts and removed routes
   const filteredSegments = rawSegments.filter(
-    (seg) => !isIdLikeSegment(seg) && seg !== "home-config"
+    (seg) =>
+      !isIdLikeSegment(seg) &&
+      seg !== "home-config" &&
+      seg !== "settings"
   );
 
   const segments = filteredSegments.map((segment, index) => {
