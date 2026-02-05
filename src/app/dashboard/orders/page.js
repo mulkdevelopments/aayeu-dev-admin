@@ -27,6 +27,7 @@ import {
   Calendar as CalendarIcon,
   ChevronRight,
   ChevronLeft,
+  RefreshCw,
 } from "lucide-react";
 import { Spinner } from "@/components/_ui/spinner";
 import OrdersSkeleton from "@/components/skeleton/OrderSkeleton";
@@ -87,6 +88,7 @@ const OrdersPage = () => {
     // fetchOrders(); // Fetch with new filters
   };
   const [vendors, setVendors] = useState([]);
+  const [verifyingOrderIds, setVerifyingOrderIds] = useState({});
 
   // Fetch Vendors
   const fetchVendors = async () => {
@@ -231,6 +233,32 @@ const OrdersPage = () => {
       if (selectedOrder) {
         fetchOrderDetails(selectedOrder);
       }
+    }
+  };
+
+  const handleVerifyPayment = async (orderId) => {
+    if (!orderId) return;
+    setVerifyingOrderIds((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/verify-payment",
+        payload: { orderId },
+        authRequired: true,
+      });
+      if (error) {
+        showToast("error", data?.message || "Payment verification failed");
+      } else {
+        showToast("success", data?.message || "Payment verified");
+        fetchOrders(page);
+        if (selectedOrder === orderId) {
+          fetchOrderDetails(orderId);
+        }
+      }
+    } catch (err) {
+      showToast("error", err.message || "Payment verification failed");
+    } finally {
+      setVerifyingOrderIds((prev) => ({ ...prev, [orderId]: false }));
     }
   };
 
@@ -569,19 +597,37 @@ const OrdersPage = () => {
                             )}
                           </TableCell>
                           <TableCell className="capitalize">
-                            <span
-                              className={`px-3 py-1 rounded-md text-gray-100 font-bold ${
-                                order?.payment_status === "pending"
-                                  ? "bg-red-700"
-                                  : "bg-green-700"
-                              }`}
-                            >
-                              {order.payment_status === "pending"
-                                ? "abandoned"
-                                : order.payment_status === "paid"
-                                ? "paid"
-                                : order.payment_status || "N/A"}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-3 py-1 rounded-md text-gray-100 font-bold ${
+                                  order?.payment_status === "pending"
+                                    ? "bg-red-700"
+                                    : "bg-green-700"
+                                }`}
+                              >
+                                {order.payment_status === "pending"
+                                  ? "abandoned"
+                                  : order.payment_status === "paid"
+                                  ? "paid"
+                                  : order.payment_status || "N/A"}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                title="Verify payment with Stripe"
+                                onClick={() => handleVerifyPayment(order.id)}
+                                disabled={
+                                  verifyingOrderIds[order.id] ||
+                                  order?.payment_status === "paid"
+                                }
+                              >
+                                {verifyingOrderIds[order.id] ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </TableCell>
                           <TableCell className="capitalize">
                             <span
@@ -805,7 +851,7 @@ const OrdersPage = () => {
                           <dt className="font-semibold text-gray-600 uppercase tracking-wider text-xs">
                             Payment Status
                           </dt>
-                          <dd className="mt-1">
+                          <dd className="mt-1 flex items-center gap-2">
                             <span
                               className={`inline-flex items-center px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full ${
                                 orderDetails.payment_status === "pending"
@@ -817,6 +863,22 @@ const OrdersPage = () => {
                                 ? "abandoned"
                                 : orderDetails.payment_status || "N/A"}
                             </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Verify payment with Stripe"
+                              onClick={() => handleVerifyPayment(orderDetails.id)}
+                              disabled={
+                                verifyingOrderIds[orderDetails.id] ||
+                                orderDetails.payment_status === "paid"
+                              }
+                            >
+                              {verifyingOrderIds[orderDetails.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                            </Button>
                           </dd>
                         </div>
                         <div>
