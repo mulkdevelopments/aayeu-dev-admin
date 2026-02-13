@@ -6,12 +6,26 @@ import Image from "next/image";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import FileUploader from "@/components/comman/FileUploader";
 import { showToast } from "@/components/_ui/toast-utils";
 import useAxios from "@/hooks/useAxios";
-import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DEFAULT_OVERLAY = {
   id: null,
@@ -24,16 +38,13 @@ const DEFAULT_OVERLAY = {
 
 export default function ManageProductOverlay() {
   const { request } = useAxios();
-  // We support up to 3 overlay items
-  const [forms, setForms] = useState([
-    { ...DEFAULT_OVERLAY },
-    { ...DEFAULT_OVERLAY },
-    { ...DEFAULT_OVERLAY },
-  ]);
   const [overlays, setOverlays] = useState([]);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const router = useRouter();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [activeOverlay, setActiveOverlay] = useState({ ...DEFAULT_OVERLAY });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
   const allowedMedia = useMemo(
@@ -55,39 +66,25 @@ export default function ManageProductOverlay() {
         authRequired: true,
       });
 
-      if (error || !data?.data) {
-        console.log("No overlay grid data found");
-        return;
-      }
-
-      const items = Array.isArray(data.data) ? data.data : [];
-
-      if (!items.length) {
-        setForms([
-          { ...DEFAULT_OVERLAY },
-          { ...DEFAULT_OVERLAY },
-          { ...DEFAULT_OVERLAY },
-        ]);
+      if (error) {
+        showToast("error", error || "Failed to fetch overlays.");
         setOverlays([]);
         return;
       }
 
-      // Prefill up to 3 overlays from API response
-      const nextForms = [...forms];
-      items.slice(0, 3).forEach((item, index) => {
-        nextForms[index] = {
-          id: item.id,
-          title: item.title || "",
-          mrp: item.mrp ?? "",
-          salePrice: item.sale_price ?? "",
-          link: item.product_redirect_url || "",
-          mediaUrl: item.product_image || "",
-        };
-      });
+      const raw = Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.data?.data)
+        ? data.data.data
+        : [];
+      const items = raw;
 
-      setForms(nextForms);
+      if (!items.length) {
+        setOverlays([]);
+        return;
+      }
 
-      const formattedOverlays = items.slice(0, 3).map((item) => ({
+      const formattedOverlays = items.map((item) => ({
         id: item.id,
         title: item.title || "",
         mrp: item.mrp ?? "",
@@ -109,17 +106,13 @@ export default function ManageProductOverlay() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateForm = (index, field, value) =>
-    setForms((prev) => {
-      const next = [...prev];
-      next[index] = {
-        ...next[index],
-        [field]: value,
-      };
-      return next;
-    });
+  const updateActiveOverlay = (field, value) =>
+    setActiveOverlay((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
-  const handleUploadSuccess = (index, response) => {
+  const handleUploadSuccess = (response) => {
     const payload = response?.data;
     const uploaded =
       payload?.uploaded ||
@@ -142,98 +135,80 @@ export default function ManageProductOverlay() {
       return;
     }
 
-    updateForm(index, "mediaUrl", mediaUrl);
+    updateActiveOverlay("mediaUrl", mediaUrl);
     showToast("success", "Overlay media uploaded.");
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    // Take only those overlays where at least one field is filled
-    const overlaysToSave = forms
-      .map((item, idx) => ({ ...item, index: idx }))
-      .filter(
-        (item) =>
-          item.title.trim() ||
-          item.link.trim() ||
-          item.mediaUrl
-      );
-
-    if (!overlaysToSave.length) {
-      showToast(
-        "error",
-        "Please fill at least one overlay with title, link, and image."
-      );
-      return;
-    }
-
-    // Validate each filled overlay
-    const invalid = overlaysToSave.find(
-      (item) => !item.title.trim() || !item.link.trim() || !item.mediaUrl
-    );
-
-    if (invalid) {
-      showToast(
-        "error",
-        "For every overlay you are using, title, link, and image are all required."
-      );
+  const handleSaveOverlay = async (event) => {
+    event?.preventDefault?.();
+    if (!activeOverlay.title.trim() || !activeOverlay.link.trim() || !activeOverlay.mediaUrl) {
+      showToast("error", "Title, link, and image are required.");
       return;
     }
 
     try {
       setIsSaving(true);
 
-      // Call create-overlay-grid for each filled overlay (supports create + update)
-      const responses = await Promise.all(
-        overlaysToSave.map((overlay) => {
-          const payload = {
-            title: overlay.title,
-            mrp: overlay.mrp,
-            sale_price: overlay.salePrice,
-            product_image: overlay.mediaUrl,
-            product_redirect_url: overlay.link,
-          };
+      const payload = {
+        title: activeOverlay.title,
+        mrp: activeOverlay.mrp,
+        sale_price: activeOverlay.salePrice,
+        product_image: activeOverlay.mediaUrl,
+        product_redirect_url: activeOverlay.link,
+      };
+      if (activeOverlay.id) payload.id = activeOverlay.id;
 
-          // Only send id when it exists (update case). For new overlays, id is omitted.
-          if (overlay.id) {
-            payload.id = overlay.id;
-          }
+      const { error } = await request({
+        method: "POST",
+        url: "/admin/create-overlay-grid",
+        payload,
+        authRequired: true,
+      });
 
-          return request({
-            method: "POST",
-            url: "/admin/create-overlay-grid",
-            payload,
-            authRequired: true,
-          });
-        })
-      );
-
-      const anyError = responses.find((res) => res.error);
-      if (anyError) {
-        showToast(
-          "error",
-          anyError.error || "Failed to save one or more overlays."
-        );
+      if (error) {
+        showToast("error", error || "Failed to save overlay.");
         return;
       }
 
-      showToast("success", "Overlays saved successfully.");
-      router.push('/dashboard/settings/home-config/');
+      showToast("success", "Overlay saved successfully.");
+      setIsDialogOpen(false);
+      setActiveOverlay({ ...DEFAULT_OVERLAY });
       await fetchOverlayGrid();
     } finally {
       setIsSaving(false);
     }
   };
 
-  const toggleOverlay = (id) =>
-    setOverlays((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, active: !item.active } : item
-      )
-    );
+  const openAddDialog = () => {
+    setActiveOverlay({ ...DEFAULT_OVERLAY });
+    setIsDialogOpen(true);
+  };
 
-  const removeOverlay = (id) =>
-    setOverlays((prev) => prev.filter((item) => item.id !== id));
+  const openEditDialog = (overlay) => {
+    setActiveOverlay({ ...overlay });
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteOverlay = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsDeleting(true);
+      const { error } = await request({
+        method: "DELETE",
+        url: `/admin/delete-overlay-grid?id=${deleteTarget.id}`,
+        authRequired: true,
+      });
+      if (error) {
+        showToast("error", error || "Failed to delete overlay.");
+        return;
+      }
+      showToast("success", "Overlay deleted successfully.");
+      setDeleteTarget(null);
+      await fetchOverlayGrid();
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -250,122 +225,30 @@ export default function ManageProductOverlay() {
           <p className="text-sm text-gray-500">Loading overlay data...</p>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 rounded-2xl border border-dashed border-gray-300 p-6 bg-white"
-        >
-          {forms.map((overlayForm, index) => (
-            <div
-              key={index}
-              className="space-y-3 rounded-2xl border border-gray-200 bg-gray-50 p-4"
-            >
-              <p className="text-sm font-semibold text-gray-800">
-                Overlay {index + 1}
+        <div className="rounded-2xl border border-dashed border-gray-300 p-6 bg-white space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Overlay Items</h2>
+              <p className="text-sm text-muted-foreground">
+                You can create up to 3 overlay items. Edit or remove anytime.
               </p>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Input
-              placeholder="Overlay title"
-              value={overlayForm.title}
-              onChange={(e) =>
-                updateForm(index, "title", e.target.value)
-              }
-            />
-            <Input
-              placeholder="MRP"
-              type="number"
-              value={overlayForm.mrp}
-              onChange={(e) =>
-                updateForm(index, "mrp", e.target.value)
-              }
-            />
-            <Input
-              placeholder="Sale price"
-              type="number"
-              value={overlayForm.salePrice}
-              onChange={(e) =>
-                updateForm(index, "salePrice", e.target.value)
-              }
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              placeholder="Product redirect URL"
-              value={overlayForm.link}
-              onChange={(e) =>
-                updateForm(index, "link", e.target.value)
-              }
-            />
-          </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
-                  Overlay Art / Image
-                </p>
-                <FileUploader
-                  url="/admin/upload-banners"
-                  fieldName="banners"
-                  maxFiles={1}
-                  multiple={false}
-                  allowedTypes={allowedMedia}
-                  onSuccess={(res) => handleUploadSuccess(index, res)}
-                  onError={() =>
-                    showToast(
-                      "error",
-                      "Failed to upload overlay media."
-                    )
-                  }
-                />
-                {overlayForm.mediaUrl && (
-                  <div className="mt-3 flex items-center gap-3 rounded-xl border p-3 bg-white">
-                    <div className="relative h-20 w-32 overflow-hidden rounded-lg bg-gray-100">
-                      <Image
-                        src={overlayForm.mediaUrl}
-                        alt={`Overlay ${index + 1} preview`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">
-                        Current preview
-                      </p>
-                      <p className="text-xs text-gray-500 truncate max-w-xs">
-                        {overlayForm.mediaUrl}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
-          ))}
-
-          {/* <div className="flex items-center gap-2">
-            <Switch
-              checked={form.active}
-              onCheckedChange={(checked) => updateForm("active", checked)}
-            />
-            <Label className="text-sm text-gray-600">
-              Show overlay on home page
-            </Label>
-          </div> */}
-
-          <div className="flex items-end justify-end border-t pt-4">
             <Button
-              type="submit"
-              disabled={isSaving}
+              type="button"
+              onClick={openAddDialog}
+              disabled={overlays.length >= 3}
             >
-              {isSaving ? "Saving..." : "Save Overlays"}
+              Add Overlay
             </Button>
           </div>
-        </form>
+        </div>
       )}
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Live Overlays</h2>
         {overlays.length === 0 ? (
           <p className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
-            No overlay configured yet. Add one using the form above.
+            No overlay configured yet. Click “Add Overlay” to create one.
           </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
@@ -374,11 +257,9 @@ export default function ManageProductOverlay() {
                 key={overlay.id}
                 className="rounded-2xl border bg-white p-4 shadow-sm"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-base font-semibold">
-                      {overlay.title}
-                    </p>
+                    <p className="text-base font-semibold">{overlay.title}</p>
                     <p className="text-xs text-muted-foreground">
                       MRP: {overlay.mrp || "-"} | Sale:{" "}
                       {overlay.salePrice || "-"}
@@ -387,10 +268,24 @@ export default function ManageProductOverlay() {
                       {overlay.link || "No link set"}
                     </p>
                   </div>
-                  {/* <Switch
-                    checked={overlay.active}
-                    onCheckedChange={() => toggleOverlay(overlay.id)}
-                  /> */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      onClick={() => openEditDialog(overlay)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      type="button"
+                      onClick={() => setDeleteTarget(overlay)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
 
                 {overlay.mediaUrl && (
@@ -413,30 +308,129 @@ export default function ManageProductOverlay() {
                   {overlay.link || "No link"}
                 </a>
 
-                <div className="mt-3 flex items-end justify-end text-sm text-gray-500">
-                  {/* <span>{overlay.active ? "Active" : "Inactive"}</span> */}
-                     {/* <Button
-                      variant="ghost"
-                      type="button"
-                      size="sm"
-                      onClick={() => toggleOverlay(overlay.id)}
-                    >
-                      {overlay.active ? "Disable" : "Activate"}
-                    </Button> */}
-                    <Button
-                      variant="destructive"
-                      type="button"
-                      size="sm"
-                      onClick={() => removeOverlay(overlay.id)}
-                    >
-                      Remove
-                    </Button>
-                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {activeOverlay.id ? "Edit Overlay" : "Add Overlay"}
+            </DialogTitle>
+            <DialogDescription>
+              Title, link, and image are required for each overlay.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveOverlay} className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Input
+                placeholder="Overlay title"
+                value={activeOverlay.title}
+                onChange={(e) => updateActiveOverlay("title", e.target.value)}
+              />
+              <Input
+                placeholder="MRP"
+                type="number"
+                value={activeOverlay.mrp}
+                onChange={(e) => updateActiveOverlay("mrp", e.target.value)}
+              />
+              <Input
+                placeholder="Sale price"
+                type="number"
+                value={activeOverlay.salePrice}
+                onChange={(e) => updateActiveOverlay("salePrice", e.target.value)}
+              />
+            </div>
+
+            <Input
+              placeholder="Product redirect URL"
+              value={activeOverlay.link}
+              onChange={(e) => updateActiveOverlay("link", e.target.value)}
+            />
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">
+                Overlay Art / Image
+              </p>
+              <FileUploader
+                url="/admin/upload-banners"
+                fieldName="banners"
+                maxFiles={1}
+                multiple={false}
+                allowedTypes={allowedMedia}
+                onSuccess={(res) => handleUploadSuccess(res)}
+                onError={() =>
+                  showToast("error", "Failed to upload overlay media.")
+                }
+              />
+              {activeOverlay.mediaUrl && (
+                <div className="mt-3 flex items-center gap-3 rounded-xl border p-3 bg-white">
+                  <div className="relative h-20 w-32 overflow-hidden rounded-lg bg-gray-100">
+                    <Image
+                      src={activeOverlay.mediaUrl}
+                      alt="Overlay preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">
+                      Current preview
+                    </p>
+                    <p className="text-xs text-gray-500 truncate max-w-xs">
+                      {activeOverlay.mediaUrl}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save Overlay"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete overlay?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the overlay from the home page. You can add it
+              again later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={handleDeleteOverlay}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
