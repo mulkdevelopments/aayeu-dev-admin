@@ -16,6 +16,7 @@ import SyncProgressTracker from "@/components/_dialogs/SyncProgressTracker";
 const LUXURY_VENDOR_ID = "65053474-4e40-44ee-941c-ef5253ea9fc9";
 const PEPPELA_VENDOR_ID = "b34fd0f6-815a-469e-b7c2-73f9e8afb3ed";
 const BRANDSGATEWAY_VENDOR_ID = "51bd4bcf-1c4d-4972-b10d-f21c2af93a9c";
+const BDROPPY_VENDOR_ID = "a6bdd96b-0e2c-4f3e-b644-4e088b1778e0";
 
 export default function VendorDetailPage() {
   const params = useParams();
@@ -172,6 +173,8 @@ export default function VendorDetailPage() {
       ? { url: "/admin/get-products-from-peppela", vendorId: PEPPELA_VENDOR_ID }
       : vendor.id === BRANDSGATEWAY_VENDOR_ID
       ? { url: "/admin/get-products-from-brandsgateway", vendorId: BRANDSGATEWAY_VENDOR_ID }
+      : vendor.id === BDROPPY_VENDOR_ID
+      ? { url: "/admin/get-products-from-bdroppy", vendorId: BDROPPY_VENDOR_ID }
       : null;
 
   return (
@@ -352,8 +355,8 @@ export default function VendorDetailPage() {
                 </p>
               </div>
 
-              {/* Sync Button for API vendors */}
-              {canSyncProducts && syncConfig && (
+              {/* Sync Button for API vendors (full sync: LD, Peppela, BG, BDroppy) */}
+              {syncConfig && (
                 <div className="pt-4 border-t">
                   <Button
                     onClick={() => setSyncDialogOpen(true)}
