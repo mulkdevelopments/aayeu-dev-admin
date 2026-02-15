@@ -856,12 +856,23 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                                         <div className="h-3 w-10 bg-gray-200 animate-pulse rounded"></div>
                                       ) : liveStockData ? (
                                         (() => {
-                                          const sizeStock = liveStockData.stockBySize?.find(
-                                            s => s.size?.toLowerCase() === v.variant_size?.toLowerCase()
-                                          );
+                                          const variantSize = v.variant_size?.toLowerCase();
+                                          const sizeStock = variantSize
+                                            ? liveStockData.stockBySize?.find(
+                                                (s) => s.size?.toLowerCase() === variantSize
+                                              )
+                                            : liveStockData.stockBySize?.find(
+                                                (s) =>
+                                                  s.size?.toLowerCase() === "n/a" ||
+                                                  s.size?.toLowerCase() === "na"
+                                              );
+                                          const fallbackTotal =
+                                            liveStockData.totalStock ??
+                                            sizeStock?.quantity ??
+                                            v.stock;
                                           return (
                                             <span className="font-medium text-green-600">
-                                              {sizeStock?.quantity ?? 0}
+                                              {sizeStock?.quantity ?? fallbackTotal ?? 0}
                                             </span>
                                           );
                                         })()
