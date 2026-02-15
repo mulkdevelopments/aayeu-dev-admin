@@ -43,9 +43,9 @@ const Page = () => {
             </Button>
           </div>
 
-          {[...settingsCards, ...actions].map((card) => (
+          {[...settingsCards, ...actions].map((card, index) => (
             <Link
-              key={card.id}
+              key={card.href || `card-${index}`}
               href={card.href}
               className="flex items-center justify-between rounded-xl border border-gray-300 p-3 hover:bg-gray-200 transition"
             >

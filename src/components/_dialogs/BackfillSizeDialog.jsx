@@ -15,7 +15,7 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import useAxios from "@/hooks/useAxios";
 import { showToast } from "@/components/_ui/toast-utils";
 
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 10000;
 
 export default function BackfillSizeDialog({ open, onClose }) {
   const { request } = useAxios();
@@ -53,6 +53,7 @@ export default function BackfillSizeDialog({ open, onClose }) {
     const { data, error } = await request({
       method: "POST",
       url: "/admin/backfill-size",
+      payload: {},
       authRequired: true,
     });
     setIsStarting(false);
