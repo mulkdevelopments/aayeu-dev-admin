@@ -20,6 +20,7 @@ import {
   ChevronRight,
   Globe,
   Plug,
+  Settings,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -113,6 +114,11 @@ const sidebarRoutes = [
     label: "Countries",
     path: ROUTE_PATH.DASHBOARD.COUNTRIES,
     icon: <Globe size={18} />,
+  },
+  {
+    label: "Settings",
+    path: ROUTE_PATH.DASHBOARD.SETTINGS,
+    icon: <Settings size={18} />,
   },
   // Import Product removed - sync moved to Plugins page
   // {
