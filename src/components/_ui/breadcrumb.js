@@ -15,6 +15,7 @@ const routeNames = {
   customers: "Customers",
   users: "Users",
   orders: "Orders",
+  "request-access": "Request Access",
   inventories: "Inventories",
   viewproduct: "Product Details",
   addproduct: "Add Product",

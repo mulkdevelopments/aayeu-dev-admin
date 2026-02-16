@@ -18,6 +18,7 @@ export const ROUTE_PATH = {
     PLUGINS: "/dashboard/plugins",
     PLUGIN_DETAIL: "/dashboard/plugins/:id",
     ORDERS: "/dashboard/orders",
+    REQUEST_ACCESS: "/dashboard/request-access",
     INVENTORIES: "/dashboard/inventories",
     VIEW_PRODUCT: "/dashboard/inventories/viewproduct/:id",
     // IMPORT_PRODUCT: "/dashboard/importproduct", // Deprecated - moved to plugins page
@@ -29,6 +30,7 @@ export const ROUTE_PATH = {
 
     SETTINGS: "/dashboard/settings",
     COUNTRIES: "/dashboard/countries",
+    STOCK_NOTIFY: "/dashboard/stock-notify",
 
     SETTINGS_MENU_CONFIG: "/dashboard/settings/menu-config",
     SETTINGS_HOME_CONFIG: "/dashboard/settings/home-config",

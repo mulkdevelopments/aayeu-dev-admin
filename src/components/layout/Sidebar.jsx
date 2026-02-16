@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Globe,
   Plug,
+  KeyRound,
+  Bell,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -36,8 +38,17 @@ const sidebarRoutes = [
   {
     label: "Orders",
     path: ROUTE_PATH.DASHBOARD.ORDERS,
-
     icon: <ShoppingCart size={18} />,
+  },
+  {
+    label: "Stock Notifications",
+    path: ROUTE_PATH.DASHBOARD.STOCK_NOTIFY,
+    icon: <Bell size={18} />,
+  },
+  {
+    label: "Request Access",
+    path: ROUTE_PATH.DASHBOARD.REQUEST_ACCESS,
+    icon: <KeyRound size={18} />,
   },
   {
     label: "Inventory",
