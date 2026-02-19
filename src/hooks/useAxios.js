@@ -65,15 +65,13 @@ export default function useAxios() {
         requestHeaders.Authorization = `Bearer ${authUser.token}`;
       }  
 
-      // ✅ Build axios config (works for both authed & non-authed requests)
+      // ✅ Build axios config (GET uses params; others use body when payload provided)
       const axiosConfig = {
         method,
         url,
         responseType,
         headers: requestHeaders,
-        ...(method === "GET" || method === "DELETE"
-          ? { params }
-          : { data: requestData }),
+        ...(method === "GET" ? { params } : requestData != null ? { data: requestData } : {}),
       };
 
       const response = await axiosInstance(axiosConfig);

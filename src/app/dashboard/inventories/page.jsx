@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import useAxios from "@/hooks/useAxios";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/components/_ui/toast-utils";
 import { debounce } from "lodash";
-import { Eye, Check, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -65,6 +65,9 @@ export default function InventoryPage() {
   const [isAutoMapOpen, setIsAutoMapOpen] = useState(false);
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState(new Set());
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const selectAllCheckboxRef = useRef(null);
 
   const [state, setState] = useState({
     searchValue: "",
@@ -272,6 +275,67 @@ export default function InventoryPage() {
       }
       return next;
     });
+  };
+
+  // Bulk selection
+  const filteredProducts = products.filter((product) => {
+    const isMapped = product.mapped_category || product.mapped_categories?.length > 0;
+    if (state.filters.mappingStatus === "mapped") return isMapped;
+    if (state.filters.mappingStatus === "unmapped") return !isMapped;
+    return true;
+  });
+
+  const toggleBulkSelect = (productId, e) => {
+    e?.stopPropagation?.();
+    setBulkSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = (e) => {
+    e?.stopPropagation?.();
+    if (bulkSelectedIds.size >= filteredProducts.length) {
+      setBulkSelectedIds(new Set());
+    } else {
+      setBulkSelectedIds(new Set(filteredProducts.map((p) => p.id)));
+    }
+  };
+
+  const clearBulkSelection = () => setBulkSelectedIds(new Set());
+
+  useEffect(() => {
+    const el = selectAllCheckboxRef.current;
+    if (el && filteredProducts.length > 0) {
+      el.indeterminate = bulkSelectedIds.size > 0 && bulkSelectedIds.size < filteredProducts.length;
+    }
+  }, [bulkSelectedIds.size, filteredProducts.length]);
+
+  const runBulkAction = async (action) => {
+    if (bulkActionLoading || bulkSelectedIds.size === 0) return;
+    if (action === "delete" && !window.confirm(`Delete ${bulkSelectedIds.size} product(s)? This will soft-delete them.`)) return;
+    setBulkActionLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/bulk-product-action",
+        authRequired: true,
+        payload: {
+          product_ids: Array.from(bulkSelectedIds),
+          action,
+        },
+      });
+      if (error) throw new Error(data?.message || error);
+      showToast("success", data?.message || "Done");
+      clearBulkSelection();
+      handleRefresh();
+    } catch (err) {
+      showToast("error", err?.message || "Action failed");
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
   // 🔍 Debounced Search
@@ -483,97 +547,91 @@ export default function InventoryPage() {
   });
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-slate-50 p-6">
       <CustomBreadcrumb />
 
-      {/* Header */}
-      {/* Header + Buttons */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-        {/* Title */}
-        <h1 className="text-2xl sm:text-3xl font-bold w-full lg:w-auto">
+      {/* Page header */}
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
           Inventory
         </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          View and manage products. Click a row to open details.
+        </p>
+      </div>
 
-        {/* Buttons & Search */}
-        <div className="flex flex-col sm:flex-row lg:flex-row flex-wrap sm:items-center gap-2 w-full lg:w-auto">
+      {/* Search + primary actions */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <Input
             type="text"
             value={searchValue}
             placeholder="Search products..."
-            className="w-full sm:w-[250px] lg:w-[250px]"
+            className="w-full sm:max-w-[280px] h-10 bg-white border-slate-200 rounded-lg"
             onChange={handleSearchChange}
           />
-
-          <div className="flex items-center gap-2 px-2">
-            <Switch
-              checked={showSuggestions}
-              onCheckedChange={setShowSuggestions}
-            />
-            <span className="text-sm text-gray-700">Show Suggestions</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={showSuggestions}
+                onCheckedChange={setShowSuggestions}
+              />
+              <span className="text-sm text-slate-600">Show suggestions</span>
+            </div>
+            <Button
+              variant="outline"
+              className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              onClick={() =>
+                router.push(ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT)
+              }
+            >
+              Category Management
+            </Button>
+            <Button
+              variant="outline"
+              className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              onClick={handleBulkAcceptSuggestions}
+              disabled={bulkAcceptLoading || !showSuggestions}
+            >
+              {bulkAcceptLoading ? "Applying..." : "Accept selected"}
+            </Button>
+            <Button
+              className="bg-slate-900 hover:bg-slate-800 text-white"
+              onClick={() => setIsAutoMapOpen(true)}
+            >
+              Auto Map
+            </Button>
+            <Button
+              variant="outline"
+              className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              onClick={handleRefresh}
+            >
+              Refresh
+            </Button>
           </div>
-
-          <Button
-            variant="default"
-            className="w-full sm:w-auto lg:w-auto "
-            onClick={() =>
-              router.push(ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT)
-            }
-          >
-            Category Management
-          </Button>
-
-          <Button
-            variant="default"
-            className="w-full sm:w-auto lg:w-auto bg-emerald-600 hover:bg-emerald-700"
-            onClick={handleBulkAcceptSuggestions}
-            disabled={bulkAcceptLoading || !showSuggestions}
-          >
-            {bulkAcceptLoading ? "Applying..." : "Accept Selected Suggestions"}
-          </Button>
-
-          <Button
-            variant="default"
-            className="w-full sm:w-auto lg:w-auto bg-indigo-600 hover:bg-indigo-700"
-            onClick={() => setIsAutoMapOpen(true)}
-          >
-            Auto Map
-          </Button>
-
-          <Button
-            variant="default"
-            className="w-full sm:w-auto lg:w-auto"
-            onClick={handleRefresh}
-          >
-            Refresh
-          </Button>
-
-          {/* <Button
-            variant="default"
-            className="w-full sm:w-auto lg:w-auto"
-            onClick={() => router.push(ROUTE_PATH.DASHBOARD.ADD_PRODUCT)}
-          >
-            Add Single Product
-          </Button> */}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-xs text-gray-500">Total Products</div>
-          <div className="text-xl font-semibold text-gray-900">{stats.total}</div>
+      {/* Stats cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total products</div>
+          <div className="text-2xl font-semibold text-slate-900 mt-1">{stats.total}</div>
         </div>
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-xs text-gray-500">Mapped Products</div>
-          <div className="text-xl font-semibold text-emerald-700">{stats.mapped}</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Mapped</div>
+          <div className="text-2xl font-semibold text-slate-700 mt-1">{stats.mapped}</div>
         </div>
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-xs text-gray-500">Inactive Products</div>
-          <div className="text-xl font-semibold text-red-600">{stats.inactive}</div>
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Inactive</div>
+          <div className="text-2xl font-semibold text-slate-600 mt-1">{stats.inactive}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row lg:flex-row flex-wrap gap-2 mb-4 items-start sm:items-center">
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-6">
+        <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Filters</div>
+        <div className="flex flex-col sm:flex-row lg:flex-row flex-wrap gap-3 items-start sm:items-center">
         {/* Gender Filter */}
         <Select
           value={state.filters.gender}
@@ -728,11 +786,11 @@ export default function InventoryPage() {
           />
         </div>
         <Button
-          variant="default"
-          className="w-full sm:w-auto lg:w-auto"
+          variant="outline"
+          className="border-slate-300 text-slate-600 hover:bg-slate-100 w-full sm:w-auto"
           onClick={handleClearFilters}
         >
-          Clear Filters
+          Clear filters
         </Button>
 
         {/* Vendor Dropdown */}
@@ -783,30 +841,85 @@ export default function InventoryPage() {
             <SelectItem value="unmapped">Not Mapped Only</SelectItem>
           </SelectContent>
         </Select>
+        </div>
       </div>
 
+      {/* Bulk action bar */}
+      {bulkSelectedIds.size > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <span className="text-sm font-medium text-slate-700">
+            {bulkSelectedIds.size} selected
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => runBulkAction("set_active")}
+            disabled={bulkActionLoading}
+          >
+            Set active
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-slate-300 text-slate-700 hover:bg-slate-100"
+            onClick={() => runBulkAction("set_inactive")}
+            disabled={bulkActionLoading}
+          >
+            Set inactive
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-slate-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => runBulkAction("delete")}
+            disabled={bulkActionLoading}
+          >
+            Delete
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-slate-600"
+            onClick={clearBulkSelection}
+            disabled={bulkActionLoading}
+          >
+            Clear selection
+          </Button>
+          {bulkActionLoading && (
+            <span className="text-xs text-slate-500">Applying…</span>
+          )}
+        </div>
+      )}
+
       {/* Table */}
-      <div className="overflow-x-auto w-full border mt-6 border-gray-200 rounded-md">
-        <div className="min-w-[900px]">
-          <Table className="table-auto w-full">
-            {/* HEADER — shown only once */}
-            <TableHeader className="bg-gray-200">
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                 <TableHead>Category</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Gender</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Vendor Price</TableHead>
-                <TableHead>Markup %</TableHead>
-                {/* <TableHead>Stock</TableHead> */}
-                <TableHead className="text-center">Last Updated</TableHead>
-                <TableHead className="text-center">Status</TableHead>
-                {/* <TableHead className="text-center">Mapping</TableHead> */}
-                  
-                <TableHead className="text-center">Action</TableHead>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[900px]">
+            <Table className="table-auto w-full">
+              <TableHeader className="bg-slate-100 border-b border-slate-200">
+              <TableRow className="border-slate-200 hover:bg-slate-100/50">
+                <TableHead className="w-10 pr-0">
+                  <input
+                    type="checkbox"
+                    ref={selectAllCheckboxRef}
+                    checked={filteredProducts.length > 0 && bulkSelectedIds.size === filteredProducts.length}
+                    onChange={toggleSelectAll}
+                    className="h-4 w-4 rounded border-slate-300 accent-slate-700"
+                    aria-label="Select all on page"
+                  />
+                </TableHead>
+                <TableHead className="text-slate-600 font-semibold">Image</TableHead>
+                <TableHead className="text-slate-600 font-semibold">Name</TableHead>
+                <TableHead className="text-slate-600 font-semibold">Category</TableHead>
+                <TableHead className="text-slate-600 font-semibold">Brand</TableHead>
+                <TableHead className="text-slate-600 font-semibold">Gender</TableHead>
+                <TableHead className="text-slate-600 font-semibold">Vendor</TableHead>
+                <TableHead className="text-slate-600 font-semibold text-center">Price</TableHead>
+                <TableHead className="text-slate-600 font-semibold text-center">Vendor price</TableHead>
+                <TableHead className="text-slate-600 font-semibold text-center">Markup %</TableHead>
+                <TableHead className="text-slate-600 font-semibold text-center">Last updated</TableHead>
+                <TableHead className="text-slate-600 font-semibold text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -815,7 +928,10 @@ export default function InventoryPage() {
               {loading &&
                 Array.from({ length: 8 }).map((_, idx) => (
                   <TableRow key={idx}>
-                     <TableCell>
+                    <TableCell className="w-10 pr-0">
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                    <TableCell>
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
                     <TableCell>
@@ -857,23 +973,12 @@ export default function InventoryPage() {
                     <TableCell className="text-center">
                       <Skeleton className="mx-auto h-6 w-16 rounded-md" />
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Skeleton className="mx-auto h-8 w-8 rounded-md" />
-                    </TableCell>
                   </TableRow>
                 ))}
 
               {/* -------------- SHOW PRODUCTS AFTER LOADING -------------- */}
               {!loading &&
-                products
-                  .filter((product) => {
-                    // Client-side filter for mapping status
-                    const isMapped = product.mapped_category || product.mapped_categories?.length > 0;
-                    if (state.filters.mappingStatus === "mapped") return isMapped;
-                    if (state.filters.mappingStatus === "unmapped") return !isMapped;
-                    return true; // "all"
-                  })
-                  .map((product) => {
+                filteredProducts.map((product) => {
                   const categoryNames =
                     product.categories?.map((cat) => cat.name).join(", ") ||
                     "-";
@@ -897,9 +1002,24 @@ export default function InventoryPage() {
                     : '-';
 
                   return (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        {console.log(product)}
+                    <TableRow
+                      key={product.id}
+                      className={`cursor-pointer transition-colors ${bulkSelectedIds.has(product.id) ? "bg-slate-100" : "hover:bg-slate-50"}`}
+                      onClick={() => {
+                        setSelectedProductId(product.id);
+                        setIsProductModalOpen(true);
+                      }}
+                    >
+                      <TableCell className="w-10 pr-0" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={bulkSelectedIds.has(product.id)}
+                          onChange={(e) => toggleBulkSelect(product.id, e)}
+                          className="h-4 w-4 rounded border-slate-300 accent-slate-700"
+                          aria-label={`Select ${product.name}`}
+                        />
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {product.product_img ? (
                           <img
                             src={product.product_img} 
@@ -907,12 +1027,12 @@ export default function InventoryPage() {
                             className="h-16 w-16 object-cover rounded-md"
                           />
                         ) : (
-                          <div className="h-16 w-16 bg-gray-200 rounded-md flex items-center justify-center">
-                            <span className="text-xs text-gray-500">No Image</span>
+                          <div className="h-16 w-16 bg-slate-200 rounded-md flex items-center justify-center">
+                            <span className="text-xs text-slate-500">No Image</span>
                           </div>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           <Link
                             href={`https://www.aayeu.com/shop/product/${generateProductSlug(
@@ -924,12 +1044,12 @@ export default function InventoryPage() {
                             rel="noopener noreferrer"
                             className="inline-block"
                           >
-                            <div className="font-medium hover:text-amber-600 transition">
+                            <div className="font-medium hover:text-slate-900 hover:underline transition">
                               {product.name}
                             </div>
                           </Link>
                           {isNew && (
-                            <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-0.5">
+                            <Badge className="bg-slate-600 text-white text-xs px-2 py-0.5 border-0">
                               New
                             </Badge>
                           )}
@@ -939,72 +1059,69 @@ export default function InventoryPage() {
                         </div>
                       </TableCell>
 
-             <TableCell className="text-center">
-  {product.mapped_categories?.length ? (
-    product.mapped_categories.map((cat, i) => (
-      <Badge
-        key={i}
-        className="rounded-full bg-yellow-600  text-xs text-white"
-      >
-        {cat.path
-          .split("/")
-          .map(w => w.replace(/-/g, " "))
-          .join(" › ")}
-      </Badge>
-    ))
-  ) : (
-    <div className="flex flex-col items-center gap-2">
-      <Badge
-        variant="destructive"
-        className="bg-orange-500 hover:bg-orange-600 text-white"
-      >
-        Not Mapped
-      </Badge>
-      {showSuggestions ? (
-        aiLoadingByProduct[product.id] ? (
-          <div className="inline-flex items-center gap-2 px-2 py-1 bg-pink-50 border border-pink-300 rounded-full text-xs text-pink-700">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Suggesting...
-          </div>
-        ) : aiSuggestionsByProduct[product.id] ? (
-          <div className="inline-flex items-center gap-2 px-2 py-1 bg-gradient-to-r from-pink-50 to-pink-100 border border-pink-400 rounded-full text-xs">
-          <input
-            type="checkbox"
-            className="h-3 w-3 accent-pink-600"
-            checked={selectedSuggestionIds.has(product.id)}
-            onChange={() => toggleSuggestionSelection(product.id)}
-            aria-label="Select suggestion"
-          />
-            <span className="text-pink-800 font-medium">
-              {aiSuggestionsByProduct[product.id].category_path || aiSuggestionsByProduct[product.id].category_name}
-            </span>
-            <button
-              onClick={() =>
-                handleAcceptSuggestion(
-                  product.id,
-                  aiSuggestionsByProduct[product.id].category_id
-                )
-              }
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-600 hover:bg-green-700 text-white rounded-full"
-              title="Accept suggestion"
-            >
-              <Check className="h-3 w-3" />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => fetchSuggestionForProduct(product.id)}
-            className="text-xs text-pink-700 underline"
-          >
-            Get suggestion
-          </button>
-        )
-      ) : (
-        <span className="text-xs text-gray-400">Suggestions off</span>
-      )}
-    </div>
-  )}
-</TableCell>
+                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                        {product.mapped_categories?.length ? (
+                          product.mapped_categories.map((cat, i) => (
+                            <Badge
+                              key={i}
+                              className="rounded-full bg-slate-700 text-xs text-white border-0"
+                            >
+                              {cat.path
+                                .split("/")
+                                .map(w => w.replace(/-/g, " "))
+                                .join(" › ")}
+                            </Badge>
+                          ))
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            <Badge className="bg-slate-200 text-slate-700 hover:bg-slate-300 border-0">
+                              Not Mapped
+                            </Badge>
+                            {showSuggestions ? (
+                              aiLoadingByProduct[product.id] ? (
+                                <div className="inline-flex items-center gap-2 px-2 py-1 bg-slate-100 border border-slate-300 rounded-full text-xs text-slate-600">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  Suggesting...
+                                </div>
+                              ) : aiSuggestionsByProduct[product.id] ? (
+                                <div className="inline-flex items-center gap-2 px-2 py-1 bg-slate-100 border border-slate-300 rounded-full text-xs">
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3 accent-slate-600"
+                                    checked={selectedSuggestionIds.has(product.id)}
+                                    onChange={() => toggleSuggestionSelection(product.id)}
+                                    aria-label="Select suggestion"
+                                  />
+                                  <span className="text-slate-800 font-medium">
+                                    {aiSuggestionsByProduct[product.id].category_path || aiSuggestionsByProduct[product.id].category_name}
+                                  </span>
+                                  <button
+                                    onClick={() =>
+                                      handleAcceptSuggestion(
+                                        product.id,
+                                        aiSuggestionsByProduct[product.id].category_id
+                                      )
+                                    }
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-800 hover:bg-slate-900 text-white rounded-full"
+                                    title="Accept suggestion"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => fetchSuggestionForProduct(product.id)}
+                                  className="text-xs text-slate-600 hover:text-slate-900 underline"
+                                >
+                                  Get suggestion
+                                </button>
+                              )
+                            ) : (
+                              <span className="text-xs text-slate-400">Suggestions off</span>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
 
                       <TableCell>{product.brand_name || "-"}</TableCell>
                       <TableCell>{product.gender || "-"}</TableCell>
@@ -1021,7 +1138,7 @@ export default function InventoryPage() {
                       </TableCell>
 
                       <TableCell className="text-center">
-                        <span className="font-semibold text-blue-600">
+                        <span className="font-semibold text-slate-700">
                           {variant.price && variant.vendorsaleprice && variant.vendorsaleprice > 0
                             ? `${(((variant.price / variant.vendorsaleprice) - 1) * 100).toFixed(2)}%`
                             : "0.00%"}
@@ -1033,7 +1150,7 @@ export default function InventoryPage() {
                       </TableCell> */}
 
                       <TableCell className="text-center">
-                        <div className="text-xs text-gray-700">
+                        <div className="text-xs text-slate-700">
                           {updatedAt}
                         </div>
                       </TableCell>
@@ -1041,60 +1158,30 @@ export default function InventoryPage() {
                       <TableCell className="text-center">
                         <Badge
                           variant={
-                            product.is_active ? "success" : "destructive"
+                            product.is_active ? "default" : "secondary"
                           }
-                          className="mx-auto px-3 py-1"
+                          className={`mx-auto px-3 py-1 border-0 ${product.is_active ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-600"}`}
                         >
                           {product.is_active ? "Active" : "Inactive"}
                         </Badge>
-                      </TableCell>
-
-                      {/* <TableCell className="text-center">
-                        {product.mapped_category || product.mapped_categories?.length > 0 ? (
-                          <Badge
-                            variant="success"
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            Mapped
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="destructive"
-                            className="bg-orange-500 hover:bg-orange-600 text-white"
-                          >
-                            Not Mapped
-                          </Badge>
-                        )}
-                      </TableCell> */}
-
-                      <TableCell className="text-center">
-                        <button
-                          onClick={() => {
-                            setSelectedProductId(product.id);
-                            setIsProductModalOpen(true);
-                          }}
-                          className="hover:text-yellow-600 transition-colors"
-                          title="View product details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
                       </TableCell>
                     </TableRow>
                   );
                 })}
             </TableBody>
           </Table>
+          </div>
         </div>
       </div>
 
-      {/* Enhanced Pagination */}
+      {/* Pagination */}
       {totalPages >= 0 && (
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          {/* First and Previous Buttons */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6 py-4">
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="border-slate-300 text-slate-700"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(1)}
               title="First page"
@@ -1104,19 +1191,18 @@ export default function InventoryPage() {
             <Button
               variant="outline"
               size="sm"
+              className="border-slate-300 text-slate-700"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => p - 1)}
             >
               Prev
             </Button>
           </div>
-
-          {/* Page Info and Jump */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-slate-600">
               Page {currentPage} of {totalPages}
             </span>
-            <span className="text-gray-400">|</span>
+            <span className="text-slate-300">|</span>
             <Input
               type="number"
               min="1"
@@ -1133,11 +1219,12 @@ export default function InventoryPage() {
                   }
                 }
               }}
-              className="w-20 h-8 text-center"
+              className="w-20 h-8 text-center border-slate-200"
             />
             <Button
-              variant="default"
+              variant="outline"
               size="sm"
+              className="border-slate-300 text-slate-700"
               onClick={() => {
                 const page = parseInt(jumpToPage);
                 if (page >= 1 && page <= totalPages) {
@@ -1150,12 +1237,11 @@ export default function InventoryPage() {
               Go
             </Button>
           </div>
-
-          {/* Next and Last Buttons */}
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="border-slate-300 text-slate-700"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((p) => p + 1)}
             >
@@ -1164,6 +1250,7 @@ export default function InventoryPage() {
             <Button
               variant="outline"
               size="sm"
+              className="border-slate-300 text-slate-700"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(totalPages)}
               title="Last page"
@@ -1182,6 +1269,7 @@ export default function InventoryPage() {
           setSelectedProductId(null);
         }}
         productId={selectedProductId}
+        onDeleteSuccess={fetchProducts}
       />
 
       <AutoMapDialog

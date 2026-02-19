@@ -13,9 +13,11 @@ import { Spinner } from "@/components/_ui/spinner";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { PencilIcon, X, RefreshCw, ChevronRight, Check, Sparkles, Loader2 } from "lucide-react";
+import { PencilIcon, X, RefreshCw, ChevronRight, Check, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import MapProductCategoryDialog from "@/components/_dialogs/MapProductCategoryDialog";
 
 const getConfidenceColor = (confidence) => {
@@ -30,7 +32,7 @@ const getConfidenceBadgeColor = (confidence) => {
   return "bg-orange-500";
 };
 
-const ProductViewModal = ({ open, onClose, productId }) => {
+const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDeleted }) => {
   const { request } = useAxios();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,12 @@ const ProductViewModal = ({ open, onClose, productId }) => {
   const [acceptingId, setAcceptingId] = useState(null);
   const [aiHasFetched, setAiHasFetched] = useState(false);
 
+  // Edit product (name, description, etc.)
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
+  const [editForm, setEditForm] = useState({});
+  const [saveProductLoading, setSaveProductLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const fetchProduct = async () => {
     if (!productId) return;
 
@@ -59,7 +67,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
     try {
       const { data, error } = await request({
         method: "GET",
-        url: `/admin/get-product-by-id?productId=${productId}`,
+        url: `/admin/get-product-by-id?productId=${productId}${includeDeleted ? "&includeDeleted=1" : ""}`,
         authRequired: true,
       });
       if (error) throw new Error(error?.message || error);
@@ -365,6 +373,91 @@ const ProductViewModal = ({ open, onClose, productId }) => {
     });
   };
 
+  const openEditProduct = () => {
+    setEditForm({
+      name: product?.name ?? "",
+      title: product?.title ?? "",
+      short_description: product?.short_description ?? "",
+      description: product?.description ?? "",
+      brand_name: product?.brand_name ?? "",
+      gender: product?.gender ?? "",
+      country_of_origin: product?.country_of_origin ?? product?.product_meta?.made_in ?? "",
+      product_img: product?.product_img ?? "",
+      product_img1: product?.product_img1 ?? "",
+      product_img2: product?.product_img2 ?? "",
+      product_img3: product?.product_img3 ?? "",
+      product_img4: product?.product_img4 ?? "",
+      product_img5: product?.product_img5 ?? "",
+    });
+    setIsEditingProduct(true);
+  };
+
+  const handleSaveProductEdit = async () => {
+    if (!productId) return;
+    setSaveProductLoading(true);
+    try {
+      const payload = {
+        product_id: productId,
+        product: {
+          name: editForm.name || undefined,
+          title: editForm.title || undefined,
+          short_description: editForm.short_description || undefined,
+          description: editForm.description || undefined,
+          brand_name: editForm.brand_name || undefined,
+          gender: editForm.gender || undefined,
+          country_of_origin: editForm.country_of_origin || undefined,
+          product_img: editForm.product_img || undefined,
+          product_img1: editForm.product_img1 || undefined,
+          product_img2: editForm.product_img2 || undefined,
+          product_img3: editForm.product_img3 || undefined,
+          product_img4: editForm.product_img4 || undefined,
+          product_img5: editForm.product_img5 || undefined,
+        },
+      };
+      const { data, error } = await request({
+        method: "PUT",
+        url: "/admin/update-product",
+        payload,
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      showToast("success", data?.message || "Product updated (sync will not override).");
+      setIsEditingProduct(false);
+      await fetchProduct();
+    } catch (err) {
+      console.error("Error saving product:", err);
+      showToast("error", err.message || "Failed to update product");
+    } finally {
+      setSaveProductLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!productId) return;
+    const confirmed = window.confirm(
+      "Soft-delete this product? It will be hidden and sync will not bring it back. You can restore from DB if needed."
+    );
+    if (!confirmed) return;
+    setDeleteLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "DELETE",
+        url: "/admin/delete-product",
+        payload: { product_id: productId },
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      showToast("success", data?.message || "Product deleted.");
+      onDeleteSuccess?.();
+      onClose();
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      showToast("error", err.message || "Failed to delete product");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (open && productId) {
       fetchProduct();
@@ -383,6 +476,7 @@ const ProductViewModal = ({ open, onClose, productId }) => {
       setAiSuggestions([]);
       setAiError(null);
       setAiHasFetched(false);
+      setIsEditingProduct(false);
     }
   }, [open]);
 
@@ -402,6 +496,97 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                 <DialogTitle className="text-xl font-bold pr-8">{product.name}</DialogTitle>
               </DialogHeader>
 
+              {isEditingProduct && (
+                <Card className="shadow-md border-2 border-amber-500 bg-amber-50/50">
+                  <CardContent className="pt-4 space-y-4">
+                    <h3 className="font-semibold text-amber-900">Edit product details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Name</Label>
+                        <Input
+                          value={editForm.name ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))}
+                          placeholder="Product name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input
+                          value={editForm.title ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))}
+                          placeholder="Product title"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Short description</Label>
+                        <Input
+                          value={editForm.short_description ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, short_description: e.target.value }))}
+                          placeholder="Short description"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Description (HTML allowed)</Label>
+                        <Textarea
+                          value={editForm.description ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))}
+                          placeholder="Full description"
+                          rows={4}
+                          className="resize-y"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Brand</Label>
+                        <Input
+                          value={editForm.brand_name ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, brand_name: e.target.value }))}
+                          placeholder="Brand name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Gender</Label>
+                        <Input
+                          value={editForm.gender ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, gender: e.target.value }))}
+                          placeholder="e.g. men, women, unisex"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label>Country of origin</Label>
+                        <Input
+                          value={editForm.country_of_origin ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, country_of_origin: e.target.value }))}
+                          placeholder="Country of origin"
+                        />
+                      </div>
+                      {["product_img", "product_img1", "product_img2", "product_img3", "product_img4", "product_img5"].map((key, i) => (
+                        <div key={key} className="space-y-2 md:col-span-2">
+                          <Label>Image URL {i === 0 ? "(main)" : i}</Label>
+                          <Input
+                            value={editForm[key] ?? ""}
+                            onChange={(e) => setEditForm(f => ({ ...f, [key]: e.target.value }))}
+                            placeholder={`Image ${i + 1} URL`}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        onClick={handleSaveProductEdit}
+                        disabled={saveProductLoading}
+                        className="bg-amber-600 hover:bg-amber-700"
+                      >
+                        {saveProductLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        Save changes
+                      </Button>
+                      <Button variant="outline" onClick={() => setIsEditingProduct(false)} disabled={saveProductLoading}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               <div className="space-y-3">
                 <Card className="shadow-md border border-yellow-600">
                   <CardContent className="space-y-3 pt-4">
@@ -419,6 +604,14 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={isEditingProduct ? () => setIsEditingProduct(false) : openEditProduct}
+                        >
+                          <PencilIcon className="w-4 h-4 mr-2" />
+                          {isEditingProduct ? "Cancel edit" : "Edit product"}
+                        </Button>
                         <Button
                           size="sm"
                           onClick={() => setIsMappingDialogOpen(true)}
@@ -444,6 +637,16 @@ const ProductViewModal = ({ open, onClose, productId }) => {
                             {syncLoading ? 'Syncing...' : 'Sync This'}
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={handleDeleteProduct}
+                          disabled={deleteLoading}
+                          title="Soft-delete product (sync will not restore it)"
+                        >
+                          {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                          Delete
+                        </Button>
                       </div>
                     </div>
 

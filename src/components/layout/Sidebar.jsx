@@ -22,6 +22,7 @@ import {
   Plug,
   KeyRound,
   Bell,
+  AlertTriangle,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -55,6 +56,16 @@ const sidebarRoutes = [
     path: ROUTE_PATH.DASHBOARD.INVENTORIES,
     icon: <Boxes size={18} />,
   },
+  {
+    label: "Deleted & suspicious",
+    path: ROUTE_PATH.DASHBOARD.DELETED_SUSPICIOUS_PRODUCTS,
+    icon: <AlertTriangle size={18} />,
+  },
+  {
+    label: "Categories",
+    path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
+    icon: <FolderTree size={18} />,
+  },
   // {
   //   label: "Reports",
   //   path: ROUTE_PATH.DASHBOARD.REPORTS,
@@ -66,13 +77,14 @@ const sidebarRoutes = [
   //   icon: <Users size={18} />,
   // },
   {
+    label: "Margin settings",
+    path: ROUTE_PATH.DASHBOARD.MARGIN_SETTINGS,
+    icon: <BarChart3 size={18} />,
+  },
+  {
     label: "Editorials",
     icon: <Edit size={18} />,
     subItems: [
-      {
-        label: "Categories",
-        path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
-      },
       {
         label: "Content & Policies",
         path: ROUTE_PATH.DASHBOARD.CONTENT_AND_POLICIES,

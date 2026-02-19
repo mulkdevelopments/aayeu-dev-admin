@@ -20,6 +20,7 @@ export const ROUTE_PATH = {
     ORDERS: "/dashboard/orders",
     REQUEST_ACCESS: "/dashboard/request-access",
     INVENTORIES: "/dashboard/inventories",
+    DELETED_SUSPICIOUS_PRODUCTS: "/dashboard/inventories/deleted-suspicious",
     VIEW_PRODUCT: "/dashboard/inventories/viewproduct/:id",
     // IMPORT_PRODUCT: "/dashboard/importproduct", // Deprecated - moved to plugins page
     CONTENT_AND_POLICIES: "/dashboard/policies",
@@ -45,6 +46,7 @@ export const ROUTE_PATH = {
     SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS_ADD_NEW_BRANDS: "/dashboard/settings/home-config/manage-featured-brands/addnewbrands",
     SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS: "/dashboard/settings/home-config/manage-new-arrivals",
     SETTINGS_HOME_ADD_BEST_SELLER: "/dashboard/settings/home-config/manage-best-sellers/addbestseller",
+    MARGIN_SETTINGS: "/dashboard/settings/margin-settings",
   },
 };
 

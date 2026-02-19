@@ -222,6 +222,40 @@ export default function PoliciesPage() {
           </div>
           <span className="text-xs font-medium text-amber-700">Edit</span>
         </Link>
+        <Link
+          href="/dashboard/settings/faq"
+          className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
+              <InfoIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">FAQ</div>
+              <div className="text-xs text-gray-500">
+                Manage FAQs page content.
+              </div>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-amber-700">Edit</span>
+        </Link>
+        <Link
+          href="/dashboard/settings/how-to-shop"
+          className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-600">
+              <InfoIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">How to Shop</div>
+              <div className="text-xs text-gray-500">
+                Manage How to Shop page content.
+              </div>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-amber-700">Edit</span>
+        </Link>
       </div>
 
       {/* Editor for selected policy */}
