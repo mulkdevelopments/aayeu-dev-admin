@@ -32,6 +32,7 @@ export const ROUTE_PATH = {
     SETTINGS: "/dashboard/settings",
     COUNTRIES: "/dashboard/countries",
     STOCK_NOTIFY: "/dashboard/stock-notify",
+    AGENTS: "/dashboard/agents",
 
     SETTINGS_MENU_CONFIG: "/dashboard/settings/menu-config",
     SETTINGS_HOME_CONFIG: "/dashboard/settings/home-config",

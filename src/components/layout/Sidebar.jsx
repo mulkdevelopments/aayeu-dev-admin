@@ -23,6 +23,7 @@ import {
   KeyRound,
   Bell,
   AlertTriangle,
+  Bot,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -57,7 +58,7 @@ const sidebarRoutes = [
     icon: <Boxes size={18} />,
   },
   {
-    label: "Deleted & suspicious",
+    label: "Quarantine",
     path: ROUTE_PATH.DASHBOARD.DELETED_SUSPICIOUS_PRODUCTS,
     icon: <AlertTriangle size={18} />,
   },
@@ -65,6 +66,11 @@ const sidebarRoutes = [
     label: "Categories",
     path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT,
     icon: <FolderTree size={18} />,
+  },
+  {
+    label: "Agents",
+    path: ROUTE_PATH.DASHBOARD.AGENTS,
+    icon: <Bot size={18} />,
   },
   // {
   //   label: "Reports",

@@ -32,7 +32,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { generateProductSlug } from "@/utils/utilities";
 import ProductViewModal from "@/components/_dialogs/ProductViewModal";
-import AutoMapDialog from "@/components/_dialogs/AutoMapDialog";
 
 export default function InventoryPage() {
   const router = useRouter();
@@ -62,7 +61,6 @@ export default function InventoryPage() {
     mapped: 0,
     inactive: 0,
   });
-  const [isAutoMapOpen, setIsAutoMapOpen] = useState(false);
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState(new Set());
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [bulkSelectedIds, setBulkSelectedIds] = useState(new Set());
@@ -594,12 +592,6 @@ export default function InventoryPage() {
               disabled={bulkAcceptLoading || !showSuggestions}
             >
               {bulkAcceptLoading ? "Applying..." : "Accept selected"}
-            </Button>
-            <Button
-              className="bg-slate-900 hover:bg-slate-800 text-white"
-              onClick={() => setIsAutoMapOpen(true)}
-            >
-              Auto Map
             </Button>
             <Button
               variant="outline"
@@ -1270,11 +1262,6 @@ export default function InventoryPage() {
         }}
         productId={selectedProductId}
         onDeleteSuccess={fetchProducts}
-      />
-
-      <AutoMapDialog
-        open={isAutoMapOpen}
-        onClose={setIsAutoMapOpen}
       />
     </div>
   );

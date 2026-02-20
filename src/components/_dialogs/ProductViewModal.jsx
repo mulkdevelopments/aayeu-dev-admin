@@ -59,6 +59,7 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
   const [editForm, setEditForm] = useState({});
   const [saveProductLoading, setSaveProductLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [generateDescLoading, setGenerateDescLoading] = useState(false);
 
   const fetchProduct = async () => {
     if (!productId) return;
@@ -379,6 +380,7 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
       title: product?.title ?? "",
       short_description: product?.short_description ?? "",
       description: product?.description ?? "",
+      our_description: product?.our_description ?? "",
       brand_name: product?.brand_name ?? "",
       gender: product?.gender ?? "",
       country_of_origin: product?.country_of_origin ?? product?.product_meta?.made_in ?? "",
@@ -403,6 +405,7 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
           title: editForm.title || undefined,
           short_description: editForm.short_description || undefined,
           description: editForm.description || undefined,
+          our_description: editForm.our_description || undefined,
           brand_name: editForm.brand_name || undefined,
           gender: editForm.gender || undefined,
           country_of_origin: editForm.country_of_origin || undefined,
@@ -429,6 +432,29 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
       showToast("error", err.message || "Failed to update product");
     } finally {
       setSaveProductLoading(false);
+    }
+  };
+
+  const handleGenerateOurDescription = async () => {
+    if (!productId) return;
+    setGenerateDescLoading(true);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/generate-our-description",
+        payload: { productId },
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      showToast("success", data?.message || "Our description generated.");
+      await fetchProduct();
+      if (data?.data?.our_description != null) {
+        setEditForm((prev) => ({ ...prev, our_description: data.data.our_description }));
+      }
+    } catch (err) {
+      showToast("error", err.message || "Failed to generate description");
+    } finally {
+      setGenerateDescLoading(false);
     }
   };
 
@@ -461,8 +487,6 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
   useEffect(() => {
     if (open && productId) {
       fetchProduct();
-      // Auto-fetch AI suggestions when modal opens
-      fetchAISuggestions();
     }
   }, [open, productId]);
 
@@ -526,11 +550,36 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
                         />
                       </div>
                       <div className="space-y-2 md:col-span-2">
-                        <Label>Description (HTML allowed)</Label>
+                        <Label>Description (vendor, HTML allowed)</Label>
                         <Textarea
                           value={editForm.description ?? ""}
                           onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))}
                           placeholder="Full description"
+                          rows={4}
+                          className="resize-y"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <div className="flex items-center justify-between">
+                          <Label>Our description (HTML)</Label>
+                          {(!editForm.our_description || !editForm.our_description.trim()) && (editForm.description || editForm.short_description) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleGenerateOurDescription}
+                              disabled={generateDescLoading}
+                              className="text-xs"
+                            >
+                              {generateDescLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                              Generate
+                            </Button>
+                          )}
+                        </div>
+                        <Textarea
+                          value={editForm.our_description ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, our_description: e.target.value }))}
+                          placeholder="Our storefront description (THE DETAILS style)"
                           rows={4}
                           className="resize-y"
                         />
@@ -712,25 +761,27 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
                             <h2 className="font-semibold text-black text-sm">
                             {categories.length > 1 ? "Mapped Categories:" : "Mapped Category:"}
                             </h2>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={fetchAISuggestions}
-                              disabled={aiLoading}
-                              className="text-xs"
-                            >
-                              {aiLoading ? (
-                                <>
-                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                  Analyzing...
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles className="h-3 w-3 mr-1" />
-                                  Get Suggestions
-                                </>
-                              )}
-                            </Button>
+                            {!aiHasFetched ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchAISuggestions}
+                                disabled={aiLoading}
+                                className="text-xs"
+                              >
+                                {aiLoading ? (
+                                  <>
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    Analyzing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="h-3 w-3 mr-1" />
+                                    Show suggestion
+                                  </>
+                                )}
+                              </Button>
+                            ) : null}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {categories.length === 0 && (
@@ -775,18 +826,18 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
                               </div>
                             ))}
 
-                            {aiLoading && (
+                            {aiHasFetched && aiLoading && (
                               <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
                                 <Loader2 className="h-4 w-4 animate-spin text-pink-600" />
                                 <span className="text-pink-700 text-xs">Analyzing suggestions...</span>
                               </div>
                             )}
-                            {!aiLoading && aiError && (
+                            {aiHasFetched && !aiLoading && aiError && (
                               <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
                                 <span className="text-pink-700 text-xs">{aiError}</span>
                               </div>
                             )}
-                            {!aiLoading && aiSuggestions.length > 0 && (
+                            {aiHasFetched && !aiLoading && aiSuggestions.length > 0 && (
                               [...aiSuggestions]
                                 .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
                                 .map((suggestion) => {
@@ -864,7 +915,7 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
                                 );
                               })
                             )}
-                            {!aiLoading && aiSuggestions.length === 0 && aiHasFetched && !aiError && (
+                            {aiHasFetched && !aiLoading && aiSuggestions.length === 0 && !aiError && (
                               <div className="inline-flex items-center gap-2 px-3 py-2 bg-pink-50 border-2 border-pink-300 rounded-lg text-sm">
                                 <span className="text-pink-700 text-xs">
                                   No suggestions found. Try again or check vendor category/path.
@@ -878,13 +929,39 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
 
                     {product.description && (
                       <div className="border-t pt-3">
-                        <h2 className="font-semibold text-black mb-2 text-sm">Description:</h2>
+                        <h2 className="font-semibold text-black mb-2 text-sm">Description (from vendor):</h2>
                         <div
                           className="text-gray-700 text-xs leading-relaxed max-h-32 overflow-y-auto"
                           dangerouslySetInnerHTML={{ __html: product.description }}
                         />
                       </div>
                     )}
+
+                    <div className="border-t pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <h2 className="font-semibold text-black text-sm">Our description:</h2>
+                        {(!product.our_description || !product.our_description.trim()) && (product.description || product.short_description) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleGenerateOurDescription}
+                            disabled={generateDescLoading}
+                            className="text-xs"
+                          >
+                            {generateDescLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                            Generate description
+                          </Button>
+                        )}
+                      </div>
+                      {product.our_description && product.our_description.trim() ? (
+                        <div
+                          className="text-gray-700 text-xs leading-relaxed max-h-40 overflow-y-auto border border-slate-200 rounded p-2 bg-slate-50"
+                          dangerouslySetInnerHTML={{ __html: product.our_description }}
+                        />
+                      ) : (
+                        <p className="text-slate-500 text-xs italic">Not set. Use “Generate description” or edit below.</p>
+                      )}
+                    </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
                       {product.product_img && (

@@ -223,11 +223,11 @@ export default function DeletedSuspiciousProductsPage() {
         items={[
           { label: "Dashboard", path: "/dashboard" },
           { label: "Inventory", path: "/dashboard/inventories" },
-          { label: "Deleted & suspicious", path: "/dashboard/inventories/deleted-suspicious" },
+          { label: "Quarantine", path: "/dashboard/inventories/deleted-suspicious" },
         ]}
       />
       <div className="mb-6 mt-4">
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Deleted & suspicious products</h1>
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Quarantine</h1>
         <p className="text-sm text-slate-500 mt-1">
           Products here are soft-deleted and inactive. Recover to make them active again.
         </p>
