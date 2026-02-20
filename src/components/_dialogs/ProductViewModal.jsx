@@ -248,7 +248,7 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
       const { data, error } = await request({
         method: "DELETE",
         url: "/admin/unmap-product-from-category",
-        params: {
+        payload: {
           product_id: product.id,
           our_category_id: categoryId,
         },

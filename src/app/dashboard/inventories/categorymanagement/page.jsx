@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { showToast } from "@/components/_ui/toast-utils";
 import useAxios from "@/hooks/useAxios";
@@ -105,6 +105,17 @@ const CategoryManagement = () => {
 
     setCategories(filtered);
   };
+
+  // Our-categories-only tree for "Move" parent selector in Edit modal
+  const ourCategoriesTree = useMemo(() => {
+    const filterOur = (nodes) => {
+      if (!nodes?.length) return [];
+      return nodes
+        .filter((n) => n.is_our_category === true)
+        .map((n) => ({ ...n, children: filterOur(n.children || []) }));
+    };
+    return filterOur(allCategories);
+  }, [allCategories]);
 
   const toggleRow = (id) => {
     setOpenIds((prev) =>
@@ -410,6 +421,7 @@ const CategoryManagement = () => {
         open={!!editCategory}
         onClose={() => setEditCategory(null)}
         onSuccess={triggerRefresh}
+        ourCategoriesTree={ourCategoriesTree}
       />
 
       <AddCategoryModel
