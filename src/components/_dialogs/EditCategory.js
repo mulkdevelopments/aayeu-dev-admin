@@ -288,8 +288,12 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
                     <ChevronRight className={cn("h-4 w-4 shrink-0 opacity-50", parentPopoverOpen && "rotate-90")} />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[280px] p-0" align="start">
-                  <div className="max-h-[min(60vh,320px)] overflow-y-auto py-1">
+                <PopoverContent
+                  className="w-[var(--radix-popover-trigger-width)] min-w-[280px] p-0"
+                  align="start"
+                  onWheel={(e) => e.stopPropagation()}
+                >
+                  <div className="max-h-[60vh] overflow-y-auto overscroll-contain py-1">
                     <button
                       type="button"
                       onClick={() => {
