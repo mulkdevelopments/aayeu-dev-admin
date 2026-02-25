@@ -10,6 +10,7 @@ const defaultStep = { title: "", text: "" };
 const initialState = {
   title: "",
   subtitle: "",
+  intro_text: "",
   steps: [{ ...defaultStep }],
 };
 
@@ -37,6 +38,7 @@ const HowToShopPage = () => {
         setForm({
           title: c.title || "",
           subtitle: c.subtitle || "",
+          intro_text: c.intro_text || "",
           steps,
         });
       }
@@ -79,6 +81,7 @@ const HowToShopPage = () => {
     const content = {
       title: form.title,
       subtitle: form.subtitle,
+      intro_text: form.intro_text || "",
       steps: (form.steps || []).filter((s) => s.title.trim() || s.text.trim()),
     };
     const { error } = await request({
@@ -124,7 +127,7 @@ const HowToShopPage = () => {
               value={form.title}
               onChange={handleChange}
               className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:bg-white"
-              placeholder="How to Shop"
+              placeholder="How to Shop on AAYEU"
             />
           </div>
           <div>
@@ -137,7 +140,20 @@ const HowToShopPage = () => {
               onChange={handleChange}
               rows={2}
               className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:bg-white resize-none"
-              placeholder="Discover curated luxury and shop with confidence..."
+              placeholder="A Simple, Seamless Luxury Shopping Experience"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">
+              Intro paragraph (below subtitle)
+            </label>
+            <textarea
+              name="intro_text"
+              value={form.intro_text}
+              onChange={handleChange}
+              rows={4}
+              className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:bg-white resize-y"
+              placeholder="Shopping on AAYEU is designed to be effortless..."
             />
           </div>
 
@@ -165,8 +181,8 @@ const HowToShopPage = () => {
                     <textarea
                       value={step.text}
                       onChange={(e) => setStep(index, "text", e.target.value)}
-                      placeholder="Step description"
-                      rows={2}
+                      placeholder="Step description (use new lines and • for bullets)"
+                      rows={4}
                       className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm resize-none"
                     />
                   </div>
