@@ -6,12 +6,12 @@ const UserPage = () => {
   const users = [
     {
       id: 1,
-      name: "Praveen Patel",
-      email: "praveen@gmail.com",
+      name: "admin",
+      email: "admin@gmail.com",
       role: "Admin",
       status: "Active",
-      lastLogin: "22 Oct 2025, 10:45 AM",
-      phone: "+91 98765 43210",
+      lastLogin: "23 Feb 2026, 10:45 AM",
+      phone: "7012975494",
     },
     {
       id: 2,

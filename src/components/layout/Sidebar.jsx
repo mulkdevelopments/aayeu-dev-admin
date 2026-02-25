@@ -134,7 +134,7 @@ const sidebarRoutes = [
     ],
   },
   {
-    label: "Plugins",
+    label: "Vendors",
     icon: <Plug size={18} />,
     isPluginMenu: true, // Dynamic submenu for vendors
   },
@@ -151,7 +151,7 @@ const sidebarRoutes = [
   // },
 ];
 
-const user = { name: "Praveen Patel", email: "praveen@example.com" };
+const user = { name: "admin", email: "admin@gmail.com" };
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
@@ -293,7 +293,7 @@ export default function Sidebar({ isOpen, onClose }) {
                               }}
                               className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                                 activeRoute === vendorPath
-                                  ? "bg-yellow-600 text-white"
+                                  ? "bg-black text-white"
                                   : "text-black hover:bg-gray-300"
                               }`}
                             >
@@ -336,7 +336,7 @@ export default function Sidebar({ isOpen, onClose }) {
                           }}
                           className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                             activeRoute === subItem.path
-                              ? "bg-yellow-600 text-white"
+                              ? "bg-black text-white"
                               : "text-black hover:bg-gray-300"
                           }`}
                         >
@@ -358,7 +358,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   }}
                   className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     activeRoute === item.path
-                      ? "bg-yellow-600 text-white"
+                      ? "bg-black text-white"
                       : "text-black hover:bg-gray-300"
                   }`}
                 >
@@ -377,7 +377,7 @@ export default function Sidebar({ isOpen, onClose }) {
             className="flex items-center cursor-pointer"
             onClick={() => setIsModalOpen(!isModalOpen)}
           >
-            <div className="w-8 h-8 bg-yellow-600 text-white flex items-center justify-center rounded-full mr-3">
+            <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-full mr-3">
               {user.name[0].toUpperCase()}
             </div>
             <div>
@@ -392,7 +392,7 @@ export default function Sidebar({ isOpen, onClose }) {
               className="absolute  bottom-full mb-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3 flex flex-col gap-2"
             >
               <Button
-                className="w-full justify-start bg-yellow-500 text-black hover:bg-yellow-600"
+                className="w-full justify-start bg-black text-white hover:bg-gray-900"
                 onClick={() =>
                   handleUserAction(
                     "Profile",
@@ -404,7 +404,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-yellow-700 text-white hover:bg-yellow-800"
+                className="w-full justify-start bg-gray-900 text-white hover:bg-black"
                 onClick={() =>
                   handleUserAction(
                     "Reset Password",
@@ -417,7 +417,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-yellow-900 text-white hover:bg-yellow-950"
+                className="w-full justify-start bg-gray-800 text-white hover:bg-black"
                 onClick={() =>
                   handleUserAction(
                     "Change Password",
@@ -430,7 +430,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-yellow-300 text-black hover:bg-yellow-400"
+                className="w-full justify-start bg-gray-200 text-black hover:bg-gray-300"
                 onClick={() =>
                   handleUserAction(
                     "Forget Password",

@@ -20,21 +20,23 @@ import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { showToast } from "@/components/_ui/toast-utils";
 import Link from "next/link";
 import dayjs from "dayjs";
-import { DirhamSymbol } from "dirham-symbol";
 
 /** 🧩 Compact Reusable Stats Card Component */
-const StatCard = ({ title, value, icon: Icon, bg }) => (
+const StatCard = ({ title, value, icon: Icon, bg, valuePrefix }) => (
   <Card
-    className={`${bg} transition-all duration-200 rounded-none hover:shadow-lg`}
+    className={`${bg} transition-all duration-200 rounded-none hover:shadow-lg border border-gray-200`}
   >
     <div className="flex items-center justify-between px-4 py-2">
       <div className="flex flex-col space-y-1">
         <span className="text-sm text-gray-600 font-medium">{title}</span>
-        <span className="text-xl font-semibold">{value ?? "—"}</span>
+        <span className="text-xl font-semibold">
+          {valuePrefix}
+          {value ?? "—"}
+        </span>
       </div>
       {Icon && (
         <div className="flex items-center justify-center p-2">
-          <Icon className="h-5 w-5 text-gray-700" />
+          <Icon className="h-5 w-5 text-black" />
         </div>
       )}
     </div>
@@ -44,12 +46,12 @@ const StatCard = ({ title, value, icon: Icon, bg }) => (
 /** 🧩 Order Status Badge */
 const StatusBadge = ({ status = "pending" }) => {
   const statusStyles = {
-    created: "bg-gray-200 text-gray-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    processing: "bg-blue-100 text-blue-800",
-    shipped: "bg-indigo-100 text-indigo-800",
-    delivered: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
+    created: "bg-gray-100 text-gray-800",
+    pending: "bg-gray-100 text-gray-800",
+    processing: "bg-gray-200 text-gray-900",
+    shipped: "bg-gray-200 text-gray-900",
+    delivered: "bg-black text-white",
+    cancelled: "bg-gray-300 text-gray-900",
   };
 
   const label = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
@@ -68,9 +70,9 @@ const StatusBadge = ({ status = "pending" }) => {
 /** 🧾 Payment Status Badge */
 const PaymentBadge = ({ status = "pending" }) => {
   const paymentStyles = {
-    paid: "bg-green-100 text-green-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    failed: "bg-red-100 text-red-800",
+    paid: "bg-black text-white",
+    pending: "bg-gray-100 text-gray-800",
+    failed: "bg-gray-300 text-gray-900",
   };
 
   const label = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
@@ -133,28 +135,28 @@ export default function DashboardPage() {
         title: "Total Customers",
         value: totalCustomers,
         icon: Users,
-        bg: "bg-yellow-50",
+        bg: "bg-white",
         path: ROUTE_PATH.DASHBOARD.CUSTOMERS,
       },
       {
         title: "Total Orders",
         value: totalOrders,
         icon: ShoppingBag,
-        bg: "bg-green-50",
+        bg: "bg-white",
         path: ROUTE_PATH.DASHBOARD.ORDERS,
       },
       {
         title: "Total Vendors",
-        value: 3,
+        value: totalVendors,
         icon: Store,
-        bg: "bg-blue-50",
+        bg: "bg-white",
         path: ROUTE_PATH.DASHBOARD.VENDORS,
       },
       {
         title: "Total Revenue ",
-        value: totalRevenue ? `€ ${totalRevenue}` : "€ 0",
-        icon: DirhamSymbol,
-        bg: "bg-purple-50",
+        value: totalRevenue ? totalRevenue : 0,
+        valuePrefix: "€ ",
+        bg: "bg-white",
         path: "#",
       },
     ],
@@ -164,7 +166,7 @@ export default function DashboardPage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 bg-white text-black">
       <CustomBreadcrumb />
 
       {/* --- Stats Section --- */}
@@ -177,13 +179,14 @@ export default function DashboardPage() {
       </div>
 
       {/* --- Recent Orders Section --- */}
-      <Card>
+      <Card className="border border-gray-200">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-bold lg:text-3xl md:text-2xl text-xl">
             Recent Orders
           </CardTitle>
           <Button
             variant="outline"
+            className="border-black text-black hover:bg-black hover:text-white"
             onClick={() => router.push(ROUTE_PATH.DASHBOARD.ORDERS)}
           >
             View All

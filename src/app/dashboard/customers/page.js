@@ -13,10 +13,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import useAxios from "@/hooks/useAxios";
-import { Spinner } from "@/components/_ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/components/_ui/toast-utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { User } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -108,15 +109,35 @@ export default function CustomerPage() {
     getCustomers(page);
   };
 
+  const CustomerSkeletonCard = () => (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+          <User className="h-5 w-5 text-gray-400" />
+        </div>
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-32 bg-gray-200" />
+          <Skeleton className="h-3 w-48 bg-gray-200" />
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Skeleton className="h-3 w-full bg-gray-200" />
+        <Skeleton className="h-3 w-full bg-gray-200" />
+        <Skeleton className="h-3 w-full bg-gray-200" />
+        <Skeleton className="h-3 w-full bg-gray-200" />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 bg-white text-black">
       <CustomBreadcrumb />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Customers</h1>
+          <h1 className="text-2xl font-semibold text-black">Customers</h1>
           {showingRange && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-gray-600 mt-1">
               Showing {showingRange.start}-{showingRange.end} of {totalCount} customers
             </p>
           )}
@@ -126,77 +147,90 @@ export default function CustomerPage() {
             placeholder="Search customers..."
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full sm:w-[220px] md:w-[260px]"
+            className="w-full sm:w-[220px] md:w-[260px] border-gray-300 focus-visible:ring-black"
           />
-          <Button onClick={handleRefresh}>Refresh</Button>
+          <Button
+            onClick={handleRefresh}
+            className="bg-black text-white hover:bg-gray-900"
+          >
+            Refresh
+          </Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-40 text-gray-600">
-          <Spinner className="w-8 h-8 mr-2" />
-          <span>Loading customers...</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <CustomerSkeletonCard key={index} />
+          ))}
         </div>
       ) : customers.length === 0 ? (
         <p className="text-center text-gray-500 py-10">No customers found</p>
       ) : (
         <div className="space-y-4">
-          <div className="overflow-x-auto border rounded-xl bg-white shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="w-[180px]">Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[120px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((cust) => (
-                  <TableRow key={cust.id} className="hover:bg-gray-50 transition-all">
-                    <TableCell className="font-medium">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {customers.map((cust) => (
+              <div
+                key={cust.id}
+                className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center">
+                    <User className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-black truncate">
                       {cust.full_name || "N/A"}
-                    </TableCell>
-                    <TableCell>{cust.email || "N/A"}</TableCell>
-                    <TableCell>{cust.phone || "N/A"}</TableCell>
-                    <TableCell>
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {cust.email || "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2 text-sm text-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <span>{cust.phone || "N/A"}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Joined</span>
+                    <span>
                       {cust.created_at
                         ? new Date(cust.created_at).toLocaleDateString("en-GB")
                         : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={
-                          cust.is_active
-                            ? "bg-green-600 hover:bg-green-700"
-                            : "bg-red-600 hover:bg-red-700"
-                        }
-                      >
-                        {cust.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedCustomerId(cust.id);
-                          setIsOpen(true);
-                        }}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <Badge
+                    className={
+                      cust.is_active
+                        ? "bg-black text-white hover:bg-gray-900"
+                        : "bg-gray-200 text-black hover:bg-gray-300"
+                    }
+                  >
+                    {cust.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    className="border-black text-black hover:bg-black hover:text-white"
+                    onClick={() => {
+                      setSelectedCustomerId(cust.id);
+                      setIsOpen(true);
+                    }}
+                  >
+                    View
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
           {totalPages > 0 && (
             <div className="flex justify-center gap-2 pt-2">
               <Button
-                className="cursor-pointer"
+                className="cursor-pointer border-black text-black hover:bg-black hover:text-white"
                 variant="outline"
                 disabled={!hasPrev}
                 onClick={() => handlePageChange(page - 1)}
@@ -207,7 +241,7 @@ export default function CustomerPage() {
                 Page {page} of {totalPages}
               </span>
               <Button
-                className="cursor-pointer"
+                className="cursor-pointer border-black text-black hover:bg-black hover:text-white"
                 variant="outline"
                 disabled={!hasNext}
                 onClick={() => handlePageChange(page + 1)}

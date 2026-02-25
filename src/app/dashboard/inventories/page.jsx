@@ -615,7 +615,7 @@ export default function InventoryPage() {
           <div className="text-2xl font-semibold text-slate-700 mt-1">{stats.mapped}</div>
         </div>
         <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Inactive</div>
+          <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Inactive (Removed from vendor catalogue)</div>
           <div className="text-2xl font-semibold text-slate-600 mt-1">{stats.inactive}</div>
         </div>
       </div>

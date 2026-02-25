@@ -38,22 +38,22 @@ export default function Navbar({ onToggleSidebar }) {
 
   return (
     <div className="w-full relative px-3 sm:px-4">
-      <nav className="h-16 w-full border-b border-gray-200 bg-white 
-                      shadow-md flex items-center justify-between rounded-lg px-4 relative">
+      <nav className="h-16 w-full border border-gray-200 bg-white 
+                      shadow-sm flex items-center justify-between rounded-lg px-4 relative">
 
         {/* Mobile Hamburger */}
         {/* <button className="md:hidden text-[#C38E1E]"  onClick={onToggleSidebar}>
           <Menu size={24} />
         </button> */}
-         <button 
-  className="block sm:hidden text-[#C38E1E]"  
-  onClick={onToggleSidebar}
->
-  <Menu size={24} />
-</button>
+        <button
+          className="block sm:hidden text-black"
+          onClick={onToggleSidebar}
+        >
+          <Menu size={24} />
+        </button>
 
         {/* Title */}
-        <div className="font-bold text-2xl text-gray-900 truncate">Aayeu</div>
+        <div className="font-bold text-2xl text-black truncate">Aayeu</div>
 
         {/* Right section */}
         <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0 relative">
@@ -64,7 +64,7 @@ export default function Navbar({ onToggleSidebar }) {
             className="hidden sm:flex items-center cursor-pointer"
             onClick={toggleDropdown}
           >
-            <div className="w-8 h-8 bg-[#C38E1E] text-white flex items-center justify-center rounded-full shadow-sm">
+            <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-full shadow-sm">
               {user.name[0].toUpperCase()}
             </div>
             <div className="ml-2">
@@ -80,7 +80,7 @@ export default function Navbar({ onToggleSidebar }) {
               className="absolute right-0 top-12 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-3 flex flex-col gap-2"
             >
               <Button
-                className="w-full justify-start bg-yellow-500 text-black hover:bg-yellow-600"
+                className="w-full justify-start bg-black text-white hover:bg-gray-900"
                 onClick={() => {
                   toast.success("Profile clicked");
                   setIsDropdownOpen(false);
@@ -91,7 +91,7 @@ export default function Navbar({ onToggleSidebar }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-yellow-500 text-black hover:bg-yellow-600"
+                className="w-full justify-start bg-gray-900 text-white hover:bg-black"
                 onClick={() => {
                   toast.success("Reset Password clicked");
                   setIsDropdownOpen(false);
@@ -103,7 +103,7 @@ export default function Navbar({ onToggleSidebar }) {
               </Button>
 
               <Button
-                className="w-full justify-start  bg-yellow-500 text-black hover:bg-yellow-600"
+                className="w-full justify-start  bg-gray-800 text-white hover:bg-black"
                 onClick={() => {
                   toast.success("Change Password clicked");
                   setIsDropdownOpen(false);
@@ -115,7 +115,7 @@ export default function Navbar({ onToggleSidebar }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-yellow-500 text-black hover:bg-yellow-600"
+                className="w-full justify-start bg-gray-200 text-black hover:bg-gray-300"
                 onClick={() => {
                   toast.success("Forget Password clicked");
                   setIsDropdownOpen(false);
@@ -126,7 +126,7 @@ export default function Navbar({ onToggleSidebar }) {
               </Button>
 
               <Button
-                className="w-full justify-start bg-red-500 text-white hover:bg-red-800"
+                className="w-full justify-start bg-black text-white hover:bg-gray-900"
                 onClick={() => {
                   toast.success("Logged out successfully");
                   handleLogout(); // clears auth + localStorage and redirects

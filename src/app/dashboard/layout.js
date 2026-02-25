@@ -13,7 +13,7 @@ export default function SuperAdminLayout({ children }) {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  const user = { name: "Praveen Patel", email: "praveen@example.com" };
+  const user = { name: "admin", email: "admin@gmail.com" };
 
   useEffect(() => {
     // If not logged in, push to root/login

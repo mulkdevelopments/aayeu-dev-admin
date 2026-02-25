@@ -12,9 +12,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import useAxios from "@/hooks/useAxios";
-import { Spinner } from "@/components/_ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { showToast } from "@/components/_ui/toast-utils";
+import { User } from "lucide-react";
 export default function ViewCustomerModal({ isOpen, onClose, customerId }) {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -49,71 +50,84 @@ export default function ViewCustomerModal({ isOpen, onClose, customerId }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       {/* <DialogContent className="max-w-2xl rounded-2xl p-6 max-h-screen overflow-y-auto"> */}
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto rounded-none border border-border bg-background p-6 shadow-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto rounded-none border border-gray-200 bg-white p-6 shadow-lg">
 
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold text-gray-900">
-            👤 Customer Details
+          <DialogTitle className="text-2xl font-semibold text-black">
+            Customer Details
           </DialogTitle>
-          <DialogDescription className="text-gray-500">
+          <DialogDescription className="text-gray-600">
             Complete information about the selected customer.
           </DialogDescription>
         </DialogHeader>
 
         {loading ? (
-          <div className="flex justify-center items-center h-40 text-gray-600">
-            <Spinner className="w-8 h-8 mr-2" />
-            <span className="text-base">Loading customer details...</span>
+          <div className="space-y-4 mt-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full border border-gray-200 bg-gray-50 flex items-center justify-center">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32 bg-gray-200" />
+                  <Skeleton className="h-3 w-48 bg-gray-200" />
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-full bg-gray-200" />
+              </div>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <Skeleton className="h-4 w-28 bg-gray-200 mb-3" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full bg-gray-200" />
+                <Skeleton className="h-3 w-5/6 bg-gray-200" />
+                <Skeleton className="h-3 w-4/6 bg-gray-200" />
+              </div>
+            </div>
           </div>
         ) : customer ? (
           <div className="space-y-6 mt-4">
-            {/* 🧠 Basic Details Section */}
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="border border-gray-200 shadow-sm bg-white">
               <CardContent className="p-5">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Basic Information
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Full Name</p>
-                    <p className="font-medium text-gray-900">
-                      {customer.full_name || "N/A"}
-                    </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-black text-white flex items-center justify-center">
+                      <User className="h-6 w-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-lg font-semibold text-black truncate">
+                        {customer.full_name || "N/A"}
+                      </p>
+                      <p className="text-sm text-gray-600 truncate">
+                        {customer.email || "N/A"}
+                      </p>
+                    </div>
                   </div>
+                  <Badge
+                    className={`${
+                      customer.is_active
+                        ? "bg-black text-white hover:bg-gray-900"
+                        : "bg-gray-200 text-black hover:bg-gray-300"
+                    }`}
+                  >
+                    {customer.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
 
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium text-gray-900">
-                      {customer.email || "N/A"}
-                    </p>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Phone</span>
+                    <span>{customer.phone || "N/A"}</span>
                   </div>
-
-                  <div>
-                    <p className="text-sm text-gray-500">Phone</p>
-                    <p className="font-medium text-gray-900">
-                      {customer.phone || "N/A"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <Badge
-                      className={`${
-                        customer.is_active
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-red-600 hover:bg-red-700"
-                      } text-white`}
-                    >
-                      {customer.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-500">Joined On</p>
-                    <p className="font-medium text-gray-900">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500">Joined</span>
+                    <span>
                       {new Date(customer.created_at).toLocaleDateString("en-GB")}
-                    </p>
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -121,24 +135,24 @@ export default function ViewCustomerModal({ isOpen, onClose, customerId }) {
 
             {/* 🏠 Address Section */}
             {customer.addresses?.length > 0 && (
-              <Card className="border border-gray-200 shadow-sm">
+              <Card className="border border-gray-200 shadow-sm bg-white">
                 <CardContent className="p-5">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  <h3 className="text-lg font-semibold text-black mb-3">
                     Addresses
                   </h3>
                   <div className="space-y-3">
                     {customer.addresses.map((addr) => (
                       <Card
                         key={addr.id}
-                        className="border border-gray-200 hover:shadow-md transition-all duration-200"
+                        className="border border-gray-200 hover:shadow-md transition-all duration-200 bg-white"
                       >
                         <CardContent className="p-4 space-y-2">
                           <div className="flex justify-between items-center">
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-black">
                               {addr.label || "Address"}
                             </p>
                             {addr.is_default && (
-                              <Badge className="bg-blue-600 text-white">
+                              <Badge className="bg-black text-white">
                                 Default
                               </Badge>
                             )}
@@ -150,7 +164,7 @@ export default function ViewCustomerModal({ isOpen, onClose, customerId }) {
                               {addr.postal_code}
                             </p>
                             <p>
-                              <span className="text-gray-500">Mobile:</span>{" "}
+                              <span className="text-gray-600">Mobile:</span>{" "}
                               {addr.mobile || "N/A"}
                             </p>
                           </div>
@@ -172,7 +186,7 @@ export default function ViewCustomerModal({ isOpen, onClose, customerId }) {
           <Button
             variant="outline"
             onClick={onClose}
-            className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="border-black text-black hover:bg-black hover:text-white"
           >
             Close
           </Button>
