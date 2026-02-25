@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import ROUTE_PATH from "@/libs/route-path";
 import { useLogout } from "@/hooks/useLogout";
+import Image from "next/image";
 
 const user = {
   name: "Super Admin",
@@ -38,25 +39,33 @@ export default function Navbar({ onToggleSidebar }) {
 
   return (
     <div className="w-full relative px-3 sm:px-4">
-      <nav className="h-16 w-full border border-gray-200 bg-white 
-                      shadow-sm flex items-center justify-between rounded-lg px-4 relative">
+      <nav className="h-24 w-full border border-gray-200 bg-white 
+                      shadow-sm flex items-center rounded-lg px-4 sm:px-6 relative">
 
         {/* Mobile Hamburger */}
         {/* <button className="md:hidden text-[#C38E1E]"  onClick={onToggleSidebar}>
           <Menu size={24} />
         </button> */}
-        <button
-          className="block sm:hidden text-black"
-          onClick={onToggleSidebar}
-        >
-          <Menu size={24} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            className="block sm:hidden text-black"
+            onClick={onToggleSidebar}
+          >
+            <Menu size={26} />
+          </button>
+        </div>
 
-        {/* Title */}
-        <div className="font-bold text-2xl text-black truncate">Aayeu</div>
-
+  
+        <Image
+              src="/assets/samples/images/aayeu_logo.png"
+              alt="Aayeu"
+              width={280}
+              height={80}
+              className="h-16 w-26 object-contain"
+              priority
+            />
         {/* Right section */}
-        <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0 relative">
+        <div className="ml-auto flex items-center gap-3 sm:gap-5 flex-shrink-0 relative">
           {/* <Bell className="h-5 w-5 text-black cursor-pointer" /> */}
 
           {/* Profile */}
@@ -64,12 +73,12 @@ export default function Navbar({ onToggleSidebar }) {
             className="hidden sm:flex items-center cursor-pointer"
             onClick={toggleDropdown}
           >
-            <div className="w-8 h-8 bg-black text-white flex items-center justify-center rounded-full shadow-sm">
+            <div className="w-10 h-10 bg-black text-white flex items-center justify-center rounded-full shadow-sm">
               {user.name[0].toUpperCase()}
             </div>
             <div className="ml-2">
-              <p className="text-sm font-medium text-black">{user.name}</p>
-              <p className="text-xs text-gray-600">{user.email}</p>
+              <p className="text-sm font-medium text-black leading-tight">{user.name}</p>
+              <p className="text-xs text-gray-600 leading-tight">{user.email}</p>
             </div>
           </div>
 

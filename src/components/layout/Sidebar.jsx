@@ -244,7 +244,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-300">
           <h1 className="font-bold text-lg text-gray-900">Admin</h1>
           <Button
-            className="sm:hidden text-slate-200 bg-red-700 rounded-full"
+            className="sm:hidden text-black bg-white rounded-full"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
