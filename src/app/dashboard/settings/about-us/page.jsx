@@ -6,6 +6,7 @@ import useAxios from "@/hooks/useAxios";
 import FileUploader from "@/components/comman/FileUploader";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 const initialState = {
   summary_heading: "",
@@ -85,6 +86,10 @@ const AboutUsPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const removeImage = (fieldName) => () => {
+    setForm((prev) => ({ ...prev, [fieldName]: "" }));
   };
 
   const handleImageUpload = (fieldName) => (uploadData) => {
@@ -212,14 +217,26 @@ const AboutUsPage = () => {
                   }}
                 />
                 {form.summary_banner && (
-                  <div className="mt-2 p-2 bg-slate-50 rounded-md relative w-32 h-20">
-                    <Image
-                      src={form.summary_banner}
-                      alt="Summary banner preview"
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md"
-                    />
+                  <div className="mt-2 flex items-start gap-2">
+                    <div className="relative w-32 h-20 p-2 bg-slate-50 rounded-md shrink-0">
+                      <Image
+                        src={form.summary_banner}
+                        alt="Summary banner preview"
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="rounded-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeImage("summary_banner")}
+                      className="text-slate-500 hover:text-red-600 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 )}
               </div>
@@ -293,14 +310,26 @@ const AboutUsPage = () => {
                   }}
                 />
                 {form.top_image_url && (
-                  <div className="mt-2 p-2 bg-slate-50 rounded-md relative w-20 h-20">
-                    <Image
-                      src={form.top_image_url}
-                      alt="Top preview"
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md"
-                    />
+                  <div className="mt-2 flex items-start gap-2">
+                    <div className="relative w-20 h-20 p-2 bg-slate-50 rounded-md shrink-0">
+                      <Image
+                        src={form.top_image_url}
+                        alt="Top preview"
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="rounded-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeImage("top_image_url")}
+                      className="text-slate-500 hover:text-red-600 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 )}
               </div>
@@ -374,14 +403,26 @@ const AboutUsPage = () => {
                   }}
                 />
                 {form.middle_image_url && (
-                  <div className="mt-2 p-2 bg-slate-50 rounded-md relative w-20 h-20">
-                    <Image
-                      src={form.middle_image_url}
-                      alt="Middle preview"
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md"
-                    />
+                  <div className="mt-2 flex items-start gap-2">
+                    <div className="relative w-20 h-20 p-2 bg-slate-50 rounded-md shrink-0">
+                      <Image
+                        src={form.middle_image_url}
+                        alt="Middle preview"
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="rounded-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeImage("middle_image_url")}
+                      className="text-slate-500 hover:text-red-600 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 )}
               </div>
@@ -455,14 +496,26 @@ const AboutUsPage = () => {
                   }}
                 />
                 {form.bottom_image_url && (
-                  <div className="mt-2 p-2 bg-slate-50 rounded-md relative w-20 h-20">
-                    <Image
-                      src={form.bottom_image_url}
-                      alt="Bottom preview"
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md"
-                    />
+                  <div className="mt-2 flex items-start gap-2">
+                    <div className="relative w-20 h-20 p-2 bg-slate-50 rounded-md shrink-0">
+                      <Image
+                        src={form.bottom_image_url}
+                        alt="Bottom preview"
+                        fill
+                        style={{ objectFit: "cover" }}
+                        className="rounded-md"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={removeImage("bottom_image_url")}
+                      className="text-slate-500 hover:text-red-600 shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Remove
+                    </Button>
                   </div>
                 )}
               </div>
