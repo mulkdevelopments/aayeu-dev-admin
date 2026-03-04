@@ -1,9 +1,16 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  turbopack: {
+    root: path.join(__dirname, '..'),
+  },
   images: {
-    unoptimized: true,   
-
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",
@@ -37,13 +44,6 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
-
-    domains: [
-      "ld-cdn.fra1.digitaloceanspaces.com",
-      "peppela.com",
-      "bdroppy.s3.fr-par.scw.cloud",
-      "res.cloudinary.com"
-    ]
   },
 };
 
