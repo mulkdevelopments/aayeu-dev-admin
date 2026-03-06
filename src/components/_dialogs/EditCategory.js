@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useAxios from "@/hooks/useAxios";
 import { showToast } from "@/components/_ui/toast-utils";
+import FileUploader from "@/components/comman/FileUploader";
 
 // Flatten tree to [{ id, name, path }] for "get path by id"
 function flattenWithPath(nodes, parentPath = "", out = []) {
@@ -127,8 +128,11 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
     is_active: true,
     priority: 0,
     parent_id: null,
+    image_url: "",
   });
   const [loading, setLoading] = useState(false);
+  // Keep latest uploaded image URL so it's never lost before save (e.g. if state updates are batched)
+  const uploadedImageUrlRef = useRef(null);
 
   const excludeIds = useMemo(
     () => (category && ourCategoriesTree.length ? getDescendantIds(category.id, ourCategoriesTree) : new Set()),
@@ -150,20 +154,38 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
   const selectedParentLabel =
     form.parent_id == null ? "— Top level (no parent)" : parentOptionsFlat.find((o) => o.id === form.parent_id)?.path ?? "Select parent";
 
-  // ✅ Load initial data
+  // ✅ Load initial data when dialog opens so saved image_url and other fields show
   useEffect(() => {
-    if (category) {
+    if (open && category) {
+      uploadedImageUrlRef.current = null;
       setForm({
         name: category.name || "",
         slug: category.slug || "",
         is_active: category.is_active ?? true,
         priority: Number(category.priority) || 0,
         parent_id: category.parent_id || null,
+        image_url: category.image_url || "",
       });
     }
-  }, [category]);
+  }, [open, category]);
 
   // ✅ Handle form changes
+  const handleMenuImageUpload = (uploadData) => {
+    const payload = uploadData?.data;
+    const uploaded = payload?.data?.uploaded ?? payload?.uploaded;
+    const url = Array.isArray(uploaded)?.[0]?.url ?? uploaded?.[0]?.url;
+    if (url) {
+      uploadedImageUrlRef.current = url;
+      setForm((prev) => ({ ...prev, image_url: url }));
+      showToast("success", "Menu image uploaded.");
+    }
+  };
+
+  const removeMenuImage = () => {
+    uploadedImageUrlRef.current = null;
+    setForm((prev) => ({ ...prev, image_url: "" }));
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
@@ -194,6 +216,8 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
       if (!form.name.trim()) throw new Error("Category name is required");
       if (!form.slug.trim()) throw new Error("Slug is required");
 
+      // Use ref so we never lose a just-uploaded image URL (state can be stale in closures)
+      const imageUrlToSave = uploadedImageUrlRef.current ?? form.image_url ?? "";
       const payload = {
         category_id: category.id,
         name: form.name,
@@ -202,9 +226,8 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
         priority: form.priority,
         parent_id: form.parent_id || null,
         metadata: category.metadata || null,
+        image_url: (imageUrlToSave && typeof imageUrlToSave === "string" ? imageUrlToSave.trim() : "") || null,
       };
-
-      console.log("➡️ Payload being sent:", payload);
 
     const { data, error } = await request({
       method: "PUT",
@@ -214,9 +237,12 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
     });
 
   if (error) throw new Error(error?.message || error);
- if(data.success) showToast("success", data.message );
-    onSuccess && onSuccess(data.data); // backend ka data
-    onClose();
+  if (data.success) {
+    showToast("success", data.message);
+    uploadedImageUrlRef.current = null;
+  }
+  onSuccess && onSuccess(data.data);
+  onClose();
   } catch (err) {
     showToast("error", err.message || "Update failed");
   } finally {
@@ -267,6 +293,48 @@ const EditCategoryModal = ({ category, open, onClose, onSuccess, ourCategoriesTr
               onChange={handleChange}
               placeholder="Enter numeric priority"
             />
+          </div>
+
+          {/* Menu image (nav mega menu) */}
+          <div>
+            <label className="block mb-1 font-medium">Menu image</label>
+            <p className="text-xs text-slate-500 mb-2">Shown in header when hovering this category. Upload an image or leave empty to use default.</p>
+            <FileUploader
+              url="/admin/upload-banners"
+              onSuccess={handleMenuImageUpload}
+              authRequired={true}
+              maxFiles={1}
+              fieldName="banners"
+              multiple={false}
+              allowedTypes={{
+                "image/png": [],
+                "image/jpeg": [],
+                "image/jpg": [],
+                "image/webp": [],
+              }}
+            />
+            {form.image_url && (
+              <div className="mt-2 flex items-start gap-2">
+                <div className="relative w-20 h-20 p-2 bg-slate-50 rounded-md shrink-0 overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={form.image_url}
+                    alt="Menu preview"
+                    className="w-full h-full object-contain rounded-md"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={removeMenuImage}
+                  className="text-slate-500 hover:text-red-600 shrink-0"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Remove
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Parent (move category) - collapsible tree */}

@@ -10,6 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import FileUploader from "@/components/comman/FileUploader";
+import Image from "next/image";
+import { Trash2 } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -30,6 +33,7 @@ const categorySchema = z.object({
     .min(1, "Priority is required")
     .refine((val) => !isNaN(Number(val)), "Priority must be a number"),
   selectedCategory: z.string().optional(),
+  image_url: z.string().optional(),
 });
 
 const AddCategoryModel = ({ open, onClose, onSuccess, categories = [], preselectCategoryId = "" }) => {
@@ -53,11 +57,25 @@ const AddCategoryModel = ({ open, onClose, onSuccess, categories = [], preselect
       metadata: { icon: "" },
       priority: "",
       selectedCategory: "",
+      image_url: "",
     },
   });
 
   const nameValue = watch("name");
   const selectedCategoryId = watch("selectedCategory");
+  const imageUrlValue = watch("image_url");
+
+  const handleMenuImageUpload = (uploadData) => {
+    const payload = uploadData?.data;
+    const uploaded = payload?.data?.uploaded ?? payload?.uploaded;
+    const url = Array.isArray(uploaded)?.[0]?.url ?? uploaded?.[0]?.url;
+    if (url) {
+      setValue("image_url", url);
+      showToast("success", "Menu image uploaded.");
+    }
+  };
+
+  const removeMenuImage = () => setValue("image_url", "");
 
   // Close dropdown when clicking outside
   React.useEffect(() => {
@@ -101,6 +119,7 @@ const AddCategoryModel = ({ open, onClose, onSuccess, categories = [], preselect
         metadata: data.metadata,
         priority: Number(data.priority),
         parent_id: data.selectedCategory || null,
+        image_url: data.image_url?.trim() || null,
       };
 
       const { data: response, error } = await request({
@@ -338,6 +357,49 @@ const AddCategoryModel = ({ open, onClose, onSuccess, categories = [], preselect
                 <p className="text-red-500 text-sm mt-1">
                   {errors.metadata.icon.message}
                 </p>
+              )}
+            </div>
+
+            {/* Menu image (optional) */}
+            <div className="mt-4">
+              <label className="block mb-1 font-medium">Menu image (optional)</label>
+              <p className="text-xs text-slate-500 mb-2">Shown in header when hovering this category. Upload an image or leave empty.</p>
+              <FileUploader
+                url="/admin/upload-banners"
+                onSuccess={handleMenuImageUpload}
+                authRequired={true}
+                maxFiles={1}
+                fieldName="banners"
+                multiple={false}
+                allowedTypes={{
+                  "image/png": [],
+                  "image/jpeg": [],
+                  "image/jpg": [],
+                  "image/webp": [],
+                }}
+              />
+              {imageUrlValue && (
+                <div className="mt-2 flex items-start gap-2">
+                  <div className="relative w-20 h-20 p-2 bg-slate-50 rounded-md shrink-0">
+                    <Image
+                      src={imageUrlValue}
+                      alt="Menu preview"
+                      fill
+                      style={{ objectFit: "contain" }}
+                      className="rounded-md"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={removeMenuImage}
+                    className="text-slate-500 hover:text-red-600 shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Remove
+                  </Button>
+                </div>
               )}
             </div>
           </form>
