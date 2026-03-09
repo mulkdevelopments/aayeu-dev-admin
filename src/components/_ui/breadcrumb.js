@@ -26,6 +26,7 @@ const routeNames = {
   settings: "Editorials",
   "home-config": "Home Configuration",
   adminprofile: "Admin Profile",
+  "manage-hero-section": "Manage Hero Section",
   "manage-top-banner": "Manage Top Banner",
   "manage-product-overlay": "Product Overlay",
   "manage-sales": "Sale Section",

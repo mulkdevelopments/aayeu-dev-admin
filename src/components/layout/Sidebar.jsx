@@ -100,6 +100,10 @@ const sidebarRoutes = [
         path: "/dashboard/settings/coupon-management",
       },
       {
+        label: "Manage Hero Section",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_HERO_SECTION,
+      },
+      {
         label: "Manage Top Banner",
         path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_TOP_BANNER,
       },

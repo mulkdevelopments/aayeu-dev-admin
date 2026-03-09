@@ -36,6 +36,7 @@ export const ROUTE_PATH = {
 
     SETTINGS_MENU_CONFIG: "/dashboard/settings/menu-config",
     SETTINGS_HOME_CONFIG: "/dashboard/settings/home-config",
+    SETTINGS_HOME_CONFIG_MANAGE_HERO_SECTION: "/dashboard/settings/home-config/manage-hero-section",
     SETTINGS_HOME_CONFIG_MANAGE_TOP_BANNER: "/dashboard/settings/home-config/manage-top-banner",
     SETTINGS_HOME_CONFIG_CHANGE_BANNER: "/dashboard/settings/home-config/manage-top-banner",
     SETTINGS_HOME_CONFIG_MANAGE_PRODUCT_OVERLAY: "/dashboard/settings/home-config/manage-product-overlay",

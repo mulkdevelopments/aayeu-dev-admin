@@ -21,6 +21,14 @@ export const ALL_PERMISSIONS = [
 
 export const actions = [
   {
+    id: 0,
+    title: "Manage Hero Section",
+    description: "Homepage hero carousel: title, description, image & CTA",
+    icon: <Image className="w-6 h-6 text-violet-600" />,
+    color: "bg-violet-50",
+    href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_HERO_SECTION,
+  },
+  {
     id: 1,
     title: "Manage Top Banner",
     description: "Update hero visuals and CTAs",
