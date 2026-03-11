@@ -30,9 +30,24 @@ export default function VendorOrderItems({
   items = [],
   orderId,
   onRetry,
-  onSyncTracking
+  onSyncTracking,
+  orderCurrency,
+  orderExchangeRate,
+  orderCurrencySymbol,
+  customDuties = {}
 }) {
   const [selectedImageByItem, setSelectedImageByItem] = useState({});
+
+  const formatItemPrice = (eurPrice) => {
+    if (eurPrice == null) return "€—";
+    const rate = Number(orderExchangeRate) ?? 1;
+    const code = orderCurrency || "AED";
+    const duty = Number(customDuties[code]) || 0;
+    let display = Number(eurPrice) * rate;
+    if (duty > 0) display = display * (1 + duty / 100);
+    const sym = orderCurrencySymbol || orderCurrency || "€";
+    return `${sym}${display.toFixed(2)}`;
+  };
 
   // Group items by vendor
   const itemsByVendor = items.reduce((acc, item) => {
@@ -283,7 +298,7 @@ export default function VendorOrderItems({
                           <div className="flex justify-between border-t pt-1.5">
                             <span className="text-gray-600">Price:</span>
                             <span className="font-bold text-gray-900">
-                              {item.price ? `€${item.price}` : "N/A"}
+                              {item.price != null ? formatItemPrice(item.price) : "N/A"}
                             </span>
                           </div>
                           {item.variant?.vendorsaleprice && (

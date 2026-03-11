@@ -41,10 +41,12 @@ import {
 import CancelOrderDialog from "@/components/_dialogs/CancelOrder";
 import Link from "next/link";
 import VendorOrderItems from "@/components/_sections/VendorOrderItems";
+import useCustomDuties from "@/hooks/useCustomDuties";
 // import InvoicePdfModal from "@/components/comman/InvoicePdfModel";
 
 const OrdersPage = () => {
   const { request, loading } = useAxios();
+  const { formatOrderPrice, customDuties } = useCustomDuties();
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState(null);
@@ -586,10 +588,7 @@ const OrdersPage = () => {
                           </TableCell>
                           <TableCell>€{order.total_amount || 0}</TableCell>
                           <TableCell>
-                            {order.currency_symbol || order.currency || "€"}
-                            {order.exchange_rate && order.exchange_rate !== 1
-                              ? (order.total_amount * order.exchange_rate).toFixed(2)
-                              : order.total_amount || 0}
+                            {formatOrderPrice(order, (order.total_amount ?? 0) - (order.discount ?? 0))}
                             {order.currency && order.currency !== "EUR" && (
                               <span className="text-xs text-gray-500 ml-1">
                                 ({order.currency})
@@ -938,7 +937,6 @@ const OrdersPage = () => {
                         Amount
                       </dt>
                       <dd className="mt-1 text-base">
-                        {console.log("oderdetails:",orderDetails)}
                         {orderDetails.payment?.amount
                           ? `${orderDetails.currency} ${orderDetails.payment?.amount}`
                           : "N/A"}
@@ -1026,25 +1024,22 @@ const OrdersPage = () => {
                   )}
                 </p>
              <p>
-                  <b>payable :</b > 
-                  <span className="font-semibold text-green-700"> € {orderDetails?.total_amount - orderDetails?.discount ?? 0}
+                  <b>Payable:</b>{" "}
+                  <span className="font-semibold text-green-700">
+                    €{orderDetails?.total_amount - orderDetails?.discount ?? 0}
                   </span>
                 </p>
                 {orderDetails?.currency && orderDetails?.currency !== "EUR" && (
                   <p className="col-span-2 mt-2 p-3 bg-blue-50 rounded-md">
-                    <b>Customer payed in :</b>{" "}
+                    <b>Customer paid (duty-inclusive):</b>{" "}
                     <span className="font-semibold text-blue-700">
-                      {orderDetails.currency_symbol || orderDetails.currency}
-                      {orderDetails.exchange_rate
-                        ? (orderDetails.total_amount * orderDetails.exchange_rate - orderDetails.discount * orderDetails.exchange_rate).toFixed(2)
-                        : orderDetails.total_amount}
+                      {formatOrderPrice(orderDetails, (orderDetails?.total_amount ?? 0) - (orderDetails?.discount ?? 0))}
                     </span>
                     <span className="ml-2 text-sm text-gray-600">
                       ({orderDetails.currency} @ rate {orderDetails.exchange_rate})
                     </span>
                   </p>
                 )}
-                
               </div>
             </div>
 
@@ -1232,6 +1227,10 @@ const OrdersPage = () => {
                 orderId={orderDetails.id}
                 onRetry={handleRetryVendorOrder}
                 onSyncTracking={handleSyncTracking}
+                orderCurrency={orderDetails.currency}
+                orderExchangeRate={orderDetails.exchange_rate}
+                orderCurrencySymbol={orderDetails.currency_symbol}
+                customDuties={customDuties}
               />
             </div>
 

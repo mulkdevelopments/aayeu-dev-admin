@@ -25,14 +25,29 @@ const defaultForm = {
   margin_low_percent: 45,
 };
 
+const DUTY_CURRENCIES = [
+  { code: "AED", label: "UAE (AED)" },
+  { code: "SAR", label: "Saudi Arabia (SAR)" },
+  { code: "QAR", label: "Qatar (QAR)" },
+  { code: "KWD", label: "Kuwait (KWD)" },
+  { code: "OMR", label: "Oman (OMR)" },
+  { code: "BHD", label: "Bahrain (BHD)" },
+  { code: "INR", label: "India (INR)" },
+  { code: "PKR", label: "Pakistan (PKR)" },
+];
+
 export default function MarginSettingsPage() {
   const { request } = useAxios();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
+  const [savingDuties, setSavingDuties] = useState(false);
   const [vendors, setVendors] = useState([]);
   const [selectedVendorId, setSelectedVendorId] = useState(null); // null = Default
   const [form, setForm] = useState(defaultForm);
+  const [duties, setDuties] = useState(() =>
+    Object.fromEntries(DUTY_CURRENCIES.map((c) => [c.code, 0]))
+  );
 
   const fetchVendors = useCallback(async () => {
     try {
@@ -83,9 +98,54 @@ export default function MarginSettingsPage() {
     }
   }, []);
 
+  const fetchDuties = useCallback(async () => {
+    try {
+      const { data, error } = await request({
+        method: "GET",
+        url: "/admin/custom-duties",
+        authRequired: true,
+      });
+      if (error || !data?.success) return;
+      if (data?.data && typeof data.data === "object") {
+        setDuties((prev) => ({
+          ...Object.fromEntries(DUTY_CURRENCIES.map((c) => [c.code, 0])),
+          ...data.data,
+        }));
+      }
+    } catch (err) {
+      console.warn("Failed to load custom duties", err);
+    }
+  }, [request]);
+
   useEffect(() => {
     fetchVendors();
   }, [fetchVendors]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { data, error } = await request({
+          method: "GET",
+          url: "/admin/custom-duties",
+          authRequired: true,
+        });
+        if (cancelled) return;
+        if (error || !data?.success) return;
+        if (data?.data && typeof data.data === "object") {
+          setDuties((prev) => ({
+            ...Object.fromEntries(DUTY_CURRENCIES.map((c) => [c.code, 0])),
+            ...data.data,
+          }));
+        }
+      } catch (err) {
+        if (!cancelled) console.warn("Failed to load custom duties", err);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch duties once on mount
+  }, []);
 
   useEffect(() => {
     fetchSettings(selectedVendorId);
@@ -141,6 +201,34 @@ export default function MarginSettingsPage() {
   const update = (key, value) => {
     const n = Number(value);
     setForm((prev) => ({ ...prev, [key]: Number.isNaN(n) ? value : n }));
+  };
+
+  const updateDuty = (code, value) => {
+    const n = Number(value);
+    setDuties((prev) => ({ ...prev, [code]: Number.isNaN(n) ? "" : n }));
+  };
+
+  const handleSaveDuties = async () => {
+    setSavingDuties(true);
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(duties).map(([code, v]) => [code, Number(v) || 0])
+      );
+      const { data, error } = await request({
+        method: "PUT",
+        url: "/admin/custom-duties",
+        payload: { duties: payload },
+        authRequired: true,
+      });
+      if (error) throw new Error(error?.message || error);
+      showToast("success", data?.message || "Custom duties saved");
+      fetchDuties();
+    } catch (err) {
+      console.error(err);
+      showToast("error", err?.message || "Failed to save custom duties");
+    } finally {
+      setSavingDuties(false);
+    }
   };
 
   return (
@@ -270,6 +358,40 @@ export default function MarginSettingsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="max-w-lg mt-8">
+        <CardHeader>
+          <CardTitle>Custom duties (per country)</CardTitle>
+          <p className="text-sm text-muted-foreground font-normal mt-1">
+            Duty percentage applied on the frontend for each currency. E.g. 42 for India shows prices including 42% duty (100 → 142).
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {DUTY_CURRENCIES.map(({ code, label }) => (
+              <div key={code} className="space-y-2">
+                <Label>{label}</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.5"
+                    placeholder="0"
+                    value={duties[code] ?? ""}
+                    onChange={(e) => updateDuty(code, e.target.value)}
+                  />
+                  <span className="text-xs text-muted-foreground">%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button onClick={handleSaveDuties} disabled={savingDuties}>
+            {savingDuties ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Save custom duties
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -20,6 +20,7 @@ import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { showToast } from "@/components/_ui/toast-utils";
 import Link from "next/link";
 import dayjs from "dayjs";
+import useCustomDuties from "@/hooks/useCustomDuties";
 
 /** 🧩 Compact Reusable Stats Card Component */
 const StatCard = ({ title, value, icon: Icon, bg, valuePrefix }) => (
@@ -91,6 +92,7 @@ const PaymentBadge = ({ status = "pending" }) => {
 export default function DashboardPage() {
   const { request } = useAxios();
   const router = useRouter();
+  const { formatOrderPrice } = useCustomDuties();
 
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -223,8 +225,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell>{order.shipping_address?.city || "—"}</TableCell>
                    <TableCell>
-                      {order.currency_symbol || order.currency}{" "}
-                      {(((order.total_amount ?? 0) - (order.discount ?? 0)) * (order.exchange_rate ?? 1)).toFixed(2)}
+                      {formatOrderPrice(order, (order.total_amount ?? 0) - (order.discount ?? 0))}
                     </TableCell>
 
                     <TableCell>
