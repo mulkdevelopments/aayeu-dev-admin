@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Clock, AlertCircle, RefreshCw, ExternalLink } from "lucide-react";
 import CustomBreadcrumb from "@/components/_ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/_ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import useAxios from "@/hooks/useAxios";
@@ -25,6 +27,8 @@ export default function VendorDetailPage() {
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [savingMerchantDash, setSavingMerchantDash] = useState(false);
+  const [merchantDashUrl, setMerchantDashUrl] = useState("");
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [productStats, setProductStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
@@ -81,11 +85,37 @@ export default function VendorDetailPage() {
       }
 
       setVendor(foundVendor);
+      setMerchantDashUrl(foundVendor.merchant_dashboard_url || "");
     } catch (err) {
       console.error("Error fetching vendor details:", err.message);
       showToast("error", err.message || "Failed to fetch vendor details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveMerchantDash = async () => {
+    if (!vendor?.id) return;
+    setSavingMerchantDash(true);
+    try {
+      const { data, error } = await request({
+        method: "PATCH",
+        url: "/admin/update-vendor",
+        authRequired: true,
+        payload: {
+          id: vendor.id,
+          merchant_dashboard_url: merchantDashUrl.trim() || null,
+        },
+      });
+      if (error) throw new Error(error?.message || error);
+      if (data?.success && data?.data) {
+        setVendor((prev) => ({ ...prev, merchant_dashboard_url: data.data.merchant_dashboard_url }));
+        showToast("success", "Merchant dashboard URL saved");
+      }
+    } catch (err) {
+      showToast("error", err.message || "Failed to save");
+    } finally {
+      setSavingMerchantDash(false);
     }
   };
 
@@ -226,6 +256,37 @@ export default function VendorDetailPage() {
                   <p className="text-gray-900">{vendor.slug}</p>
                 </div>
               )}
+              <div className="col-span-2 space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Merchant dashboard</Label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    type="url"
+                    placeholder="https://..."
+                    value={merchantDashUrl}
+                    onChange={(e) => setMerchantDashUrl(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleSaveMerchantDash}
+                    disabled={savingMerchantDash}
+                  >
+                    {savingMerchantDash ? <Spinner className="h-4 w-4" /> : "Save"}
+                  </Button>
+                </div>
+                {vendor.merchant_dashboard_url && (
+                  <a
+                    href={vendor.merchant_dashboard_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open merchant dashboard
+                  </a>
+                )}
+              </div>
             </CardContent>
           </Card>
 

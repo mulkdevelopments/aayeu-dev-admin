@@ -14,7 +14,8 @@ import {
   ExternalLink,
   Truck,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  CreditCard
 } from "lucide-react";
 
 /**
@@ -26,15 +27,21 @@ import {
  * - Tracking information
  * - Retry functionality for failed orders
  */
+const TWO_MINUTES_MS = 2 * 60 * 1000;
+
 export default function VendorOrderItems({
   items = [],
   orderId,
   onRetry,
   onSyncTracking,
+  onMarkVendorPaid,
+  onUnmarkVendorPaid,
   orderCurrency,
   orderExchangeRate,
   orderCurrencySymbol,
-  customDuties = {}
+  customDuties = {},
+  paymentStatus,
+  orderCreatedAt,
 }) {
   const [selectedImageByItem, setSelectedImageByItem] = useState({});
 
@@ -59,11 +66,13 @@ export default function VendorOrderItems({
         vendorId,
         vendorName,
         items: [],
-        // Aggregate vendor order info (items from same vendor share same vendor_order_id)
+        merchantDashboardUrl: item.vendor?.merchant_dashboard_url || null,
         vendorOrderId: item.vendor_order_id,
         vendorReference: item.vendor_reference_number,
         vendorOrderStatus: item.vendor_order_status || 'pending',
-        trackingCodes: item.tracking_codes || []
+        trackingCodes: item.tracking_codes || [],
+        vendorPaidAt: null,
+        allItemsPaidWithVendor: false,
       };
     }
 
@@ -71,6 +80,14 @@ export default function VendorOrderItems({
 
     return acc;
   }, {});
+
+  // Compute paid-with-vendor per group (all items in group must have vendor_paid_at)
+  Object.keys(itemsByVendor).forEach((vid) => {
+    const group = itemsByVendor[vid];
+    const paidDates = group.items.map((i) => i.vendor_paid_at).filter(Boolean);
+    group.allItemsPaidWithVendor = paidDates.length === group.items.length && group.items.length > 0;
+    group.vendorPaidAt = paidDates.length > 0 ? paidDates.sort().pop() : null;
+  });
 
   // Vendor color palette (consistent colors per vendor)
   const vendorColors = [
@@ -134,6 +151,29 @@ export default function VendorOrderItems({
                       {statusInfo.label}
                     </Badge>
 
+                    {/* Paid with vendor (for reference) */}
+                    {vendorGroup.allItemsPaidWithVendor && vendorGroup.vendorPaidAt && (
+                      <span className="inline-flex items-center gap-2">
+                        <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 border flex items-center gap-1.5 px-3 py-1">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Paid with vendor
+                          <span className="text-xs opacity-90">
+                            {new Date(vendorGroup.vendorPaidAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                        </Badge>
+                        {onUnmarkVendorPaid && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-amber-700 hover:text-amber-800 hover:bg-amber-50"
+                            onClick={() => onUnmarkVendorPaid(orderId, vendorGroup.vendorId)}
+                          >
+                            Undo
+                          </Button>
+                        )}
+                      </span>
+                    )}
+
                     {/* Vendor Order IDs */}
                     {vendorGroup.vendorOrderId && (
                       <div className="text-xs space-y-0.5">
@@ -177,6 +217,24 @@ export default function VendorOrderItems({
 
                 {/* Action Buttons */}
                 <div className="flex flex-col gap-2">
+                  {vendorGroup.merchantDashboardUrl && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      asChild
+                      className="border-gray-400 text-gray-700 hover:bg-gray-50"
+                    >
+                      <a
+                        href={vendorGroup.merchantDashboardUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        Merchant dashboard
+                      </a>
+                    </Button>
+                  )}
                   {vendorGroup.vendorOrderStatus === 'failed' && onRetry && (
                     <Button
                       size="sm"
@@ -201,10 +259,38 @@ export default function VendorOrderItems({
                     </Button>
                   )}
 
+                  {!vendorGroup.allItemsPaidWithVendor && onMarkVendorPaid && (vendorGroup.vendorOrderStatus === 'placed' || vendorGroup.vendorOrderId) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onMarkVendorPaid(orderId, vendorGroup.vendorId)}
+                      className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      <CreditCard className="w-3.5 h-3.5 mr-1.5" />
+                      Mark as paid
+                    </Button>
+                  )}
+
                   {vendorGroup.vendorOrderStatus === 'pending' && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      Awaiting placement
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Awaiting placement
+                      </div>
+                      {paymentStatus === "paid" &&
+                        orderCreatedAt &&
+                        Date.now() - new Date(orderCreatedAt).getTime() > TWO_MINUTES_MS &&
+                        onRetry && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onRetry(orderId, vendorGroup.vendorId)}
+                            className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                            Retry
+                          </Button>
+                        )}
                     </div>
                   )}
                 </div>

@@ -482,6 +482,7 @@ const handleToggle=async()=>{
                 <TableHead>Promo Text</TableHead>
                 <TableHead>Image</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead title="Whether this item appears on the frontend best sellers section">Frontend</TableHead>
                 <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -489,7 +490,7 @@ const handleToggle=async()=>{
             <TableBody>
               {bestSellers.length > 0 ? (
               filteredBestSellers.length===0?(<TableRow>
-    <TableCell colSpan={8} className="text-center py-6">
+    <TableCell colSpan={9} className="text-center py-6">
       No matching results
     </TableCell>
   </TableRow>) :( filteredBestSellers.map((item,index) => (
@@ -514,6 +515,15 @@ const handleToggle=async()=>{
                         <Badge variant="success" className="bg-green-600">Active</Badge>
                       ) : (
                         <Badge variant="destructive" className="bg-red-500">Inactive</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell title={item.frontend_hidden_reason || undefined}>
+                      {item.frontend_visible === true ? (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Visible</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200" title={item.frontend_hidden_reason || "Hidden"}>
+                          Hidden {item.frontend_hidden_reason ? `(${item.frontend_hidden_reason})` : ""}
+                        </Badge>
                       )}
                     </TableCell>
                     <TableCell className={"flex gap-2 justify-center"}>
@@ -557,7 +567,7 @@ const handleToggle=async()=>{
                 )))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-6">
+                  <TableCell colSpan={9} className="text-center py-6">
                     No Best Sellers Found
                   </TableCell>
                 </TableRow>

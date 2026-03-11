@@ -238,6 +238,38 @@ const OrdersPage = () => {
     }
   };
 
+  // Mark vendor items as paid (after paying on merchant dashboard)
+  const handleMarkVendorPaid = async (orderId, vendorId) => {
+    const { data, error } = await request({
+      method: "POST",
+      url: `/admin/vendor-orders/${orderId}/mark-paid`,
+      authRequired: true,
+      payload: { vendorId },
+    });
+    if (error) {
+      showToast("error", data?.message || "Failed to mark as paid");
+    } else if (data?.success) {
+      showToast("success", data?.message || "Marked as paid with vendor");
+      if (selectedOrder === orderId) fetchOrderDetails(orderId);
+    }
+  };
+
+  // Revert paid status for vendor items (undo accidental mark)
+  const handleUnmarkVendorPaid = async (orderId, vendorId) => {
+    const { data, error } = await request({
+      method: "POST",
+      url: `/admin/vendor-orders/${orderId}/unmark-paid`,
+      authRequired: true,
+      payload: { vendorId },
+    });
+    if (error) {
+      showToast("error", data?.message || "Failed to revert");
+    } else if (data?.success) {
+      showToast("success", data?.message || "Reverted paid status");
+      if (selectedOrder === orderId) fetchOrderDetails(orderId);
+    }
+  };
+
   const handleVerifyPayment = async (orderId) => {
     if (!orderId) return;
     setVerifyingOrderIds((prev) => ({ ...prev, [orderId]: true }));
@@ -1033,11 +1065,15 @@ const OrdersPage = () => {
                   <p className="col-span-2 mt-2 p-3 bg-blue-50 rounded-md">
                     <b>Customer paid (duty-inclusive):</b>{" "}
                     <span className="font-semibold text-blue-700">
-                      {formatOrderPrice(orderDetails, (orderDetails?.total_amount ?? 0) - (orderDetails?.discount ?? 0))}
+                      {orderDetails.payment?.amount != null
+                        ? `${orderDetails.currency} ${orderDetails.payment.amount}`
+                        : formatOrderPrice(orderDetails, (orderDetails?.total_amount ?? 0) - (orderDetails?.discount ?? 0))}
                     </span>
-                    <span className="ml-2 text-sm text-gray-600">
-                      ({orderDetails.currency} @ rate {orderDetails.exchange_rate})
-                    </span>
+                    {orderDetails.exchange_rate != null && (
+                      <span className="ml-2 text-sm text-gray-600">
+                        ({orderDetails.currency} @ rate {orderDetails.exchange_rate})
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -1227,10 +1263,14 @@ const OrdersPage = () => {
                 orderId={orderDetails.id}
                 onRetry={handleRetryVendorOrder}
                 onSyncTracking={handleSyncTracking}
+                onMarkVendorPaid={handleMarkVendorPaid}
+                onUnmarkVendorPaid={handleUnmarkVendorPaid}
                 orderCurrency={orderDetails.currency}
                 orderExchangeRate={orderDetails.exchange_rate}
                 orderCurrencySymbol={orderDetails.currency_symbol}
                 customDuties={customDuties}
+                paymentStatus={orderDetails.payment_status}
+                orderCreatedAt={orderDetails.created_at}
               />
             </div>
 

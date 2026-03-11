@@ -31,7 +31,8 @@ export default function useCustomDuties() {
     };
     load();
     return () => { cancelled = true; };
-  }, [request]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fetch once on mount only; request identity would cause polling
+  }, []);
 
   const formatOrderPrice = useCallback(
     (order, eurAmount) => {

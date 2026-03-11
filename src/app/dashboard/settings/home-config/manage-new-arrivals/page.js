@@ -480,6 +480,7 @@ export default function NewArrivals() {
                   <TableHead>Promo Text</TableHead>
                   <TableHead>Image</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead title="Whether this item appears on the frontend new arrivals section">Frontend</TableHead>
                   <TableHead className="text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -488,7 +489,7 @@ export default function NewArrivals() {
                 {newArrivals.length > 0 ? (
                   filteredNewArrivals.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6">
+                      <TableCell colSpan={7} className="text-center py-6">
                         No matching results
                       </TableCell>
                     </TableRow>
@@ -521,6 +522,15 @@ export default function NewArrivals() {
                           ) : (
                             <Badge variant="destructive" className="bg-red-500">
                               Inactive
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell title={item.frontend_hidden_reason || undefined}>
+                          {item.frontend_visible === true ? (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Visible</Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200" title={item.frontend_hidden_reason || "Hidden"}>
+                              Hidden {item.frontend_hidden_reason ? `(${item.frontend_hidden_reason})` : ""}
                             </Badge>
                           )}
                         </TableCell>
@@ -565,7 +575,7 @@ export default function NewArrivals() {
                   )
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6">
+                    <TableCell colSpan={7} className="text-center py-6">
                       No New Arrivals Found
                     </TableCell>
                   </TableRow>
