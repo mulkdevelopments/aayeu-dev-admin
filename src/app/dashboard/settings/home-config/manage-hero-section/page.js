@@ -30,6 +30,7 @@ export default function ManageHeroSection() {
     description: "",
     image_url: "",
     redirect_url: "/shop",
+    collection_slug: "",
     sort_order: 0,
     is_active: true,
   });
@@ -91,6 +92,7 @@ export default function ManageHeroSection() {
       description: "",
       image_url: "",
       redirect_url: "/shop",
+      collection_slug: "",
       sort_order: slides.length,
       is_active: true,
     });
@@ -105,6 +107,7 @@ export default function ManageHeroSection() {
       description: slide.description || "",
       image_url: slide.image_url || "",
       redirect_url: slide.redirect_url || "/shop",
+      collection_slug: slide.collection_slug || "",
       sort_order: slide.sort_order ?? 0,
       is_active: slide.is_active !== false,
     });
@@ -117,11 +120,13 @@ export default function ManageHeroSection() {
       showToast("error", "Title is required");
       return;
     }
+    const slugRaw = (form.collection_slug || "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     const payload = {
       title,
       description: (form.description || "").trim() || null,
       image_url: (form.image_url || "").trim() || null,
       redirect_url: (form.redirect_url || "").trim() || "/shop",
+      collection_slug: slugRaw || null,
       sort_order: Number(form.sort_order) || 0,
       is_active: !!form.is_active,
     };
@@ -221,6 +226,15 @@ export default function ManageHeroSection() {
               value={form.redirect_url}
               onChange={(e) => setForm((prev) => ({ ...prev, redirect_url: e.target.value }))}
             />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium text-gray-700">Collection slug (curated Shop Now)</label>
+            <Input
+              placeholder="e.g. timeless-modern-wardrobe — when set, Shop Now shows hand-picked products"
+              value={form.collection_slug}
+              onChange={(e) => setForm((prev) => ({ ...prev, collection_slug: e.target.value }))}
+            />
+            <p className="text-xs text-gray-500">Use letters, numbers, hyphens only. Then use &quot;Manage products&quot; below to pick 20+ products.</p>
           </div>
         </div>
         <div className="space-y-2">
@@ -322,11 +336,22 @@ export default function ManageHeroSection() {
                   <div className="p-4 border-t space-y-1">
                     <p className="font-medium text-gray-900 truncate">{slide.title}</p>
                     <p className="text-xs text-gray-500 truncate">{slide.description || "—"}</p>
-                    <p className="text-xs text-blue-600 truncate">{slide.redirect_url || "/shop"}</p>
-                    <div className="flex gap-2 pt-2">
+                    <p className="text-xs text-blue-600 truncate">
+                      {slide.collection_slug ? `/shop/curated/${slide.collection_slug}` : (slide.redirect_url || "/shop")}
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-2">
                       <Button size="sm" onClick={() => handleEdit(slide)}>
                         Edit
                       </Button>
+                      {slide.collection_slug && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => router.push(`/dashboard/settings/home-config/manage-hero-section/${slide.id}/products`)}
+                        >
+                          Manage products
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="destructive"

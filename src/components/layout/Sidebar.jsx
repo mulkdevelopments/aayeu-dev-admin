@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import ROUTE_PATH from "@/libs/route-path";
 import { useLogout } from "@/hooks/useLogout";
 import useAxios from "@/hooks/useAxios";
+import { useAuthUser } from "@/contexts/AuthContext";
 import {
   Home,
   Users,
@@ -24,6 +25,7 @@ import {
   Bell,
   AlertTriangle,
   Bot,
+  Shield,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -170,6 +172,32 @@ export default function Sidebar({ isOpen, onClose }) {
   const [vendorsLoading, setVendorsLoading] = useState(false);
   const { handleLogout } = useLogout();
   const { request } = useAxios();
+  const { authUser } = useAuthUser();
+  const isSuperadmin = authUser?.user?.role === "superadmin";
+  const allowedRoutes = Array.isArray(authUser?.user?.allowed_routes) ? authUser.user.allowed_routes : [];
+
+  const baseRoutes = isSuperadmin
+    ? [
+        sidebarRoutes[0],
+        { label: "Admin Management", path: ROUTE_PATH.DASHBOARD.ADMIN_MANAGEMENT, icon: <Shield size={18} /> },
+        ...sidebarRoutes.slice(1),
+      ]
+    : sidebarRoutes;
+
+  const displayRoutes = isSuperadmin
+    ? baseRoutes
+    : baseRoutes
+        .map((item) => {
+          if (item.subItems) {
+            const filtered = item.subItems.filter((sub) => allowedRoutes.includes(sub.path));
+            if (filtered.length === 0) return null;
+            return { ...item, subItems: filtered };
+          }
+          if (item.isPluginMenu) return allowedRoutes.includes("/dashboard/plugins") ? item : null;
+          if (item.path && !allowedRoutes.includes(item.path)) return null;
+          return item;
+        })
+        .filter(Boolean);
 
   const toggleExpand = (label) => {
     setExpandedItems(prev =>
@@ -257,7 +285,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {/* Navigation */}
         <nav className="mt-4 space-y-2 space-x-6 px-2 flex-1 overflow-y-auto">
-          {sidebarRoutes.map((item) => (
+          {displayRoutes.map((item) => (
             <div key={item.path || item.label}>
               {item.isPluginMenu ? (
                 // Plugins menu with dynamic vendor submenu

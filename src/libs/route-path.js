@@ -49,6 +49,7 @@ export const ROUTE_PATH = {
     SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS: "/dashboard/settings/home-config/manage-new-arrivals",
     SETTINGS_HOME_ADD_BEST_SELLER: "/dashboard/settings/home-config/manage-best-sellers/addbestseller",
     MARGIN_SETTINGS: "/dashboard/settings/margin-settings",
+    ADMIN_MANAGEMENT: "/dashboard/admin-management",
   },
 };
 
