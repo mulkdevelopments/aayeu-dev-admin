@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import useAxios from "@/hooks/useAxios";
 import {
   Package,
   CheckCircle2,
@@ -15,7 +16,12 @@ import {
   Truck,
   AlertCircle,
   RefreshCw,
-  CreditCard
+  CreditCard,
+  Loader2,
+  MapPin,
+  Route,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 /**
@@ -28,6 +34,347 @@ import {
  * - Retry functionality for failed orders
  */
 const TWO_MINUTES_MS = 2 * 60 * 1000;
+
+function parseTrackingCodes(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      const p = JSON.parse(raw);
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function getTrackingCode(t) {
+  return t?.trackingCode ?? t?.code ?? t?.number ?? null;
+}
+
+function getTrackingCarrier(t) {
+  return t?.carrier ?? t?.company ?? "";
+}
+
+function getTrackingUrl(t) {
+  return t?.trackingUrl ?? t?.url ?? null;
+}
+
+function carrierPublicTrackUrl(carrier, number) {
+  const c = String(carrier || "").toLowerCase();
+  const n = encodeURIComponent(number);
+  if (c.includes("fedex")) return `https://www.fedex.com/fedextrack/?trknbr=${n}`;
+  if (c.includes("dhl")) return `https://www.dhl.com/en/express/tracking.html?AWB=${n}`;
+  if (c.includes("ups")) return `https://www.ups.com/track?tracknum=${n}`;
+  if (c.includes("usps")) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${n}`;
+  return null;
+}
+
+function humanizeTrackingStatus(latestStatus) {
+  if (!latestStatus) return null;
+  const s = String(latestStatus.sub_status || latestStatus.status || "").trim();
+  const map = {
+    Delivered: "Delivered",
+    Delivered_Other: "Delivered",
+    InTransit: "In transit",
+    InTransit_PickedUp: "In transit",
+    OutForDelivery: "Out for delivery",
+    InfoReceived: "Label created",
+    Exception: "Delivery exception",
+    Pending: "Pending",
+    Expired: "Tracking expired",
+    NotFound: "Not found",
+  };
+  if (map[s]) return map[s];
+  if (!s) return null;
+  return s.replace(/_/g, " ");
+}
+
+function formatArrivalSummary(shipmentSummary) {
+  if (!shipmentSummary) return null;
+  const { estimatedFrom, estimatedTo } = shipmentSummary;
+  if (!estimatedFrom && !estimatedTo) return null;
+  const fmt = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return {
+      dateStr: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      weekday: d.toLocaleDateString("en-US", { weekday: "short" }),
+    };
+  };
+  if (estimatedFrom && estimatedTo && String(estimatedFrom) !== String(estimatedTo)) {
+    const a = fmt(estimatedFrom);
+    const b = fmt(estimatedTo);
+    if (a && b) return `Estimated delivery ${a.dateStr} – ${b.dateStr}`;
+  }
+  const target = estimatedTo || estimatedFrom;
+  const x = fmt(target);
+  if (!x) return null;
+  return `Arriving on ${x.dateStr} (${x.weekday})`;
+}
+
+/** Summary + collapsible scan timeline (17TRACK). */
+function CarrierShipmentTimeline({ trackingNumber, carrierName }) {
+  const { request } = useAxios();
+  const requestRef = useRef(request);
+  requestRef.current = request;
+  const [tick, setTick] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState({ status: "loading" });
+
+  useEffect(() => {
+    if (!trackingNumber) return;
+    let cancelled = false;
+    setState({ status: "loading" });
+    (async () => {
+      try {
+        const { data, error } = await requestRef.current({
+          method: "GET",
+          url: `/admin/tracking-timeline?number=${encodeURIComponent(trackingNumber)}&carrier=${encodeURIComponent(carrierName || "")}`,
+          authRequired: true,
+        });
+        if (cancelled) return;
+        if (error) {
+          setState({ status: "error", message: "Could not load carrier data." });
+          return;
+        }
+        const payload = data?.data ?? data;
+        setState({ status: "done", ...payload });
+      } catch {
+        if (!cancelled) setState({ status: "error", message: "Could not load carrier data." });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trackingNumber, carrierName, tick]);
+
+  const publicUrl = carrierPublicTrackUrl(carrierName, trackingNumber);
+  const events = Array.isArray(state.events) ? state.events : [];
+  const configured = state.configured !== false;
+  const summary = state.shipmentSummary || null;
+  const statusLabel = humanizeTrackingStatus(state.latestStatus);
+  const arrivalLine = formatArrivalSummary(summary);
+  const serviceLine = [summary?.serviceType, summary?.weight].filter(Boolean).join(" · ");
+  const routeLine =
+    summary?.origin || summary?.destination
+      ? [summary.origin && `From ${summary.origin}`, summary.destination && `To ${summary.destination}`]
+          .filter(Boolean)
+          .join(" → ")
+      : null;
+
+  if (state.status === "loading") {
+    return (
+      <div className="mt-3 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3">
+        <Loader2 className="h-5 w-5 animate-spin text-emerald-600 shrink-0" />
+        <div className="text-sm text-gray-600">Loading shipment status from carrier…</div>
+      </div>
+    );
+  }
+
+  const detailsInner = () => {
+    if (state.status === "error") {
+      return (
+        <div className="text-xs text-amber-800 space-y-2">
+          <p>{state.message}</p>
+          {publicUrl && (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-blue-700 underline"
+            >
+              Track on carrier site <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+      );
+    }
+    if (!configured) {
+      return (
+        <div className="text-xs text-gray-600 space-y-2">
+          <p>
+            {state.message ||
+              "Add SEVENTEEN_TRACK_API_KEY on the server for full scan history. Carrier link below."}
+          </p>
+          {publicUrl && (
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline"
+            >
+              Open carrier tracking <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+      );
+    }
+    if (state.error) {
+      return (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-red-600">
+          {state.error}
+          <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => setTick((t) => t + 1)}>
+            <RefreshCw className="w-3 h-3 mr-1" />
+            Retry
+          </Button>
+        </div>
+      );
+    }
+    if (events.length === 0) {
+      return (
+        <div className="space-y-3 text-xs text-gray-600">
+          <p>{state.message || "No scan events in feed yet."}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" className="h-8 text-xs" onClick={() => setTick((t) => t + 1)}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1" />
+              Refresh from carrier
+            </Button>
+            {publicUrl && (
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1 rounded-md border border-gray-300 bg-white px-3 text-xs font-medium hover:bg-gray-50"
+              >
+                Carrier site <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 flex items-center gap-1.5">
+            <Route className="w-3.5 h-3.5 text-emerald-600" />
+            Full scan history
+          </div>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-[11px] px-2" onClick={() => setTick((t) => t + 1)}>
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Refresh
+            </Button>
+            {publicUrl && (
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] text-blue-600 hover:underline inline-flex items-center gap-0.5 px-2"
+              >
+                Carrier <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+          </div>
+        </div>
+        <ul className="border-l-2 border-emerald-200 ml-2 pl-4 space-y-3 pb-1 max-h-[min(420px,55vh)] overflow-y-auto">
+          {events.map((ev, i) => (
+            <li key={`${ev.timeUtc}-${i}`} className="relative">
+              <span
+                className="absolute -left-[calc(1rem+3px)] top-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white border border-emerald-600/30"
+                aria-hidden
+              />
+              <div className="text-[11px] text-gray-500 font-mono tabular-nums">
+                {ev.timeUtc
+                  ? new Date(ev.timeUtc).toLocaleString(undefined, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
+                  : "—"}
+              </div>
+              <div className="text-sm text-gray-900 leading-snug">{ev.description}</div>
+              {ev.location ? (
+                <div className="text-xs text-gray-500 flex items-start gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 shrink-0 mt-0.5" />
+                  <span>{ev.location}</span>
+                </div>
+              ) : null}
+              {ev.provider && ev.provider !== "Milestone" ? (
+                <div className="text-[10px] text-gray-400 mt-0.5">{ev.provider}</div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 shadow-sm overflow-hidden">
+      <div className="p-3 sm:p-4">
+        <div className="flex gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+            <Truck className="w-5 h-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-sm font-semibold text-gray-900">{carrierName || "Carrier"}</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">·</span>
+              <span className="font-mono text-xs text-gray-700 break-all">{trackingNumber}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {statusLabel ? (
+                <Badge className="bg-emerald-700 hover:bg-emerald-700 text-white border-0 text-[11px] font-medium px-2 py-0.5">
+                  {statusLabel}
+                </Badge>
+              ) : configured ? (
+                <Badge variant="outline" className="text-[11px] border-slate-300 text-slate-700">
+                  Shipment active
+                </Badge>
+              ) : null}
+              {summary?.estimatedSource && arrivalLine ? (
+                <span className="text-[10px] text-gray-500">({summary.estimatedSource} estimate)</span>
+              ) : null}
+            </div>
+            {arrivalLine ? (
+              <p className="mt-2 text-sm font-semibold text-emerald-900 tracking-tight">{arrivalLine}</p>
+            ) : null}
+            {summary?.lastScanDescription ? (
+              <p className="mt-1.5 text-xs text-gray-600 leading-relaxed">
+                <span className="font-medium text-gray-700">Last update:</span> {summary.lastScanDescription}
+                {summary.lastScanTimeUtc ? (
+                  <span className="text-gray-500">
+                    {" "}
+                    ·{" "}
+                    {new Date(summary.lastScanTimeUtc).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                ) : null}
+                {summary.lastScanLocation ? <span className="text-gray-500"> · {summary.lastScanLocation}</span> : null}
+              </p>
+            ) : null}
+            {serviceLine ? <p className="mt-1 text-[11px] text-gray-500">{serviceLine}</p> : null}
+            {routeLine ? <p className="mt-1 text-[11px] text-gray-500">{routeLine}</p> : null}
+            {!arrivalLine && !summary?.lastScanDescription && configured && (
+              <p className="mt-2 text-xs text-gray-500">Open details for scan history or refresh to load ETA when available.</p>
+            )}
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="mt-3 w-full justify-between h-10 text-sm font-medium text-emerald-800 hover:text-emerald-900 hover:bg-emerald-50/80 border border-emerald-100 rounded-lg"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span>{open ? "Hide shipment details" : "See shipment details"}</span>
+          {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+        </Button>
+      </div>
+      {open ? (
+        <div className="border-t border-slate-200 bg-white px-3 py-4 sm:px-4 sm:py-5">{detailsInner()}</div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function VendorOrderItems({
   items = [],
@@ -80,6 +427,23 @@ export default function VendorOrderItems({
 
     return acc;
   }, {});
+
+  // Merge tracking from all line items (same vendor_order_id may duplicate rows)
+  Object.keys(itemsByVendor).forEach((vid) => {
+    const group = itemsByVendor[vid];
+    const seen = new Set();
+    const merged = [];
+    for (const it of group.items) {
+      for (const t of parseTrackingCodes(it.tracking_codes)) {
+        const key = String(getTrackingCode(t) || "");
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          merged.push(t);
+        }
+      }
+    }
+    if (merged.length) group.trackingCodes = merged;
+  });
 
   // Compute paid-with-vendor per group (all items in group must have vendor_paid_at)
   Object.keys(itemsByVendor).forEach((vid) => {
@@ -185,32 +549,68 @@ export default function VendorOrderItems({
                             Reference: <span className="font-mono">{vendorGroup.vendorReference}</span>
                           </div>
                         )}
+                        {vendorGroup.trackingCodes?.length > 0 &&
+                          vendorGroup.trackingCodes.map((t, tIdx) => {
+                            const code = getTrackingCode(t);
+                            if (!code) return null;
+                            const carrier = getTrackingCarrier(t);
+                            return (
+                              <div key={tIdx} className="text-gray-600">
+                                Tracking ID{carrier ? ` (${carrier})` : ""}:{" "}
+                                <span className="font-mono font-medium text-gray-800">{code}</span>
+                              </div>
+                            );
+                          })}
                       </div>
                     )}
                   </div>
 
-                  {/* Tracking Codes */}
+                  {/* Tracking + carrier timelines */}
                   {vendorGroup.trackingCodes && vendorGroup.trackingCodes.length > 0 && (
-                    <div className="mt-3 space-y-1.5">
+                    <div className="mt-3 space-y-3">
                       <div className="text-xs font-medium text-gray-700 flex items-center gap-1">
                         <Truck className="w-3.5 h-3.5" />
-                        Tracking Information:
+                        Tracking &amp; shipment timeline
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {vendorGroup.trackingCodes.map((tracking, idx) => (
-                          <a
-                            key={idx}
-                            href={tracking.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-gray-300 rounded-md text-xs hover:bg-gray-50 transition-colors"
+                      {vendorGroup.trackingCodes.map((tracking, idx) => {
+                        const code = getTrackingCode(tracking);
+                        if (!code) return null;
+                        const carrier = getTrackingCarrier(tracking) || "";
+                        const url = getTrackingUrl(tracking);
+                        const inner = (
+                          <>
+                            <span className="font-semibold text-gray-700">
+                              {carrier || "Tracking"}:
+                            </span>
+                            <span className="font-mono text-blue-600">{code}</span>
+                            {url ? <ExternalLink className="w-3 h-3 text-gray-400" /> : null}
+                          </>
+                        );
+                        return (
+                          <div
+                            key={`${code}-${idx}`}
+                            className="rounded-lg border border-gray-200 bg-white/80 p-3 shadow-sm"
                           >
-                            <span className="font-semibold text-gray-700">{tracking.carrier}:</span>
-                            <span className="font-mono text-blue-600">{tracking.code}</span>
-                            <ExternalLink className="w-3 h-3 text-gray-400" />
-                          </a>
-                        ))}
-                      </div>
+                            <div className="flex flex-wrap gap-2">
+                              {url ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs hover:bg-gray-100 transition-colors"
+                                >
+                                  {inner}
+                                </a>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-md text-xs">
+                                  {inner}
+                                </span>
+                              )}
+                            </div>
+                            <CarrierShipmentTimeline trackingNumber={code} carrierName={carrier} />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

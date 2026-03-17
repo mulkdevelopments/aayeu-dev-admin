@@ -28,6 +28,8 @@ import {
   ChevronRight,
   ChevronLeft,
   RefreshCw,
+  Truck,
+  Package,
 } from "lucide-react";
 import { Spinner } from "@/components/_ui/spinner";
 import OrdersSkeleton from "@/components/skeleton/OrderSkeleton";
@@ -39,6 +41,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import CancelOrderDialog from "@/components/_dialogs/CancelOrder";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Link from "next/link";
 import VendorOrderItems from "@/components/_sections/VendorOrderItems";
 import useCustomDuties from "@/hooks/useCustomDuties";
@@ -56,6 +65,8 @@ const OrdersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  /** @type {[{ orderLabel: string, results: Array<{ vendorName: string, vendorOrderId: string, tracking: Array }> } | null, Function]} */
+  const [shipmentSyncModal, setShipmentSyncModal] = useState(null);
 
   // Filter States
   const [paymentStatus, setPaymentStatus] = useState("all");
@@ -219,7 +230,7 @@ const OrdersPage = () => {
     }
   };
 
-  // 📦 Sync Tracking
+  // 📦 Sync Tracking — professional modal when carrier data returned
   const handleSyncTracking = async (orderId) => {
     const { data, error } = await request({
       method: "POST",
@@ -227,14 +238,42 @@ const OrdersPage = () => {
       authRequired: true,
     });
 
+    if (selectedOrder === orderId) {
+      fetchOrderDetails(selectedOrder);
+    }
+
     if (error) {
       showToast("error", "Tracking sync failed");
+      return;
+    }
+
+    const root = data?.data && typeof data.data === "object" ? data.data : data;
+    const result =
+      root?.result ??
+      data?.result ??
+      (typeof data?.success === "object" && data.success?.result) ??
+      null;
+    const trackingResults = Array.isArray(result?.trackingResults)
+      ? result.trackingResults
+      : [];
+
+    const hasCodes = trackingResults.some(
+      (r) =>
+        Array.isArray(r.tracking) &&
+        r.tracking.some((t) => t?.trackingCode || t?.code || t?.number)
+    );
+
+    const orderLabel =
+      selectedOrder === orderId && orderDetails?.order_no
+        ? orderDetails.order_no
+        : orderId?.slice?.(0, 8) || "Order";
+
+    if (hasCodes) {
+      setShipmentSyncModal({ orderLabel, results: trackingResults });
+    } else if (trackingResults.length > 0) {
+      showToast("info", "Sync complete — carriers have no tracking numbers yet for this order.");
     } else {
-      const count = data?.result?.trackingResults?.length || 0;
-      showToast("success", `Updated tracking for ${count} shipment${count !== 1 ? 's' : ''}`);
-      if (selectedOrder) {
-        fetchOrderDetails(selectedOrder);
-      }
+      showToast("info", "No placed vendor shipments to sync for this order.");
     }
   };
 
@@ -1329,6 +1368,68 @@ const OrdersPage = () => {
           </Card>
         )}
       </div>
+      <Dialog open={!!shipmentSyncModal} onOpenChange={(o) => !o && setShipmentSyncModal(null)}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md">
+                <Truck className="h-6 w-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-left text-lg">Shipment tracking updated</DialogTitle>
+                <p className="text-sm text-muted-foreground mt-0.5 font-mono">
+                  {shipmentSyncModal?.orderLabel}
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-gray-600">
+              The following carrier tracking IDs are now saved on this order. Full timelines appear under each vendor block below.
+            </p>
+            {(shipmentSyncModal?.results || []).map((row, idx) => (
+              <div
+                key={`${row.vendorOrderId}-${idx}`}
+                className="rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50/80 to-white p-4 shadow-sm"
+              >
+                <div className="flex items-start gap-2">
+                  <Package className="h-4 w-4 text-emerald-700 mt-0.5 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-gray-900">{row.vendorName || "Vendor"}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">
+                      Vendor order ID:{" "}
+                      <span className="font-mono text-gray-700">{row.vendorOrderId || "—"}</span>
+                    </div>
+                    <div className="mt-3 flex flex-col gap-2">
+                      {(row.tracking || []).map((t, j) => {
+                        const code = t.trackingCode || t.code || t.number;
+                        if (!code) return null;
+                        return (
+                          <div
+                            key={j}
+                            className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-2.5"
+                          >
+                            <span className="text-xs font-semibold uppercase tracking-wide text-emerald-900">
+                              {t.carrier || t.company || "Carrier"}
+                            </span>
+                            <span className="font-mono text-sm font-medium text-gray-900">{code}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setShipmentSyncModal(null)} className="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800">
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <CancelOrderDialog
         open={isCancelDialogOpen}
         onOpenChange={setIsCancelDialogOpen}
