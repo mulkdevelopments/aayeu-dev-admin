@@ -185,27 +185,21 @@ export default function AgentsPage() {
                         Open Inventory <ExternalLink className="h-3 w-3" />
                       </Link>
                     )}
+                    {agent.id === "category_remap" && (
+                      <Link
+                        href="/dashboard/settings/category-mapping"
+                        className="text-xs text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
+                      >
+                        Category Mapping <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 {agent.endpoints?.start && (
                   <>
-                    {agent.status !== "running" ? (
-                      <Button
-                        size="sm"
-                        className="bg-slate-900 hover:bg-slate-800 text-white"
-                        onClick={() => handleStart(agent)}
-                        disabled={!!startingId}
-                      >
-                        {startingId === agent.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <Play className="h-4 w-4 mr-2" />
-                        )}
-                        Start
-                      </Button>
-                    ) : (
+                    {agent.status === "running" ? (
                       <Button
                         size="sm"
                         variant="outline"
@@ -220,6 +214,26 @@ export default function AgentsPage() {
                         )}
                         Stop
                       </Button>
+                    ) : agent.startFromSettingsOnly ? (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link href="/dashboard/settings/category-mapping">
+                          Open Category Mapping
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-slate-900 hover:bg-slate-800 text-white"
+                        onClick={() => handleStart(agent)}
+                        disabled={!!startingId}
+                      >
+                        {startingId === agent.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Play className="h-4 w-4 mr-2" />
+                        )}
+                        Start
+                      </Button>
                     )}
                   </>
                 )}
@@ -232,6 +246,14 @@ export default function AgentsPage() {
                   Current job
                 </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm">
+                  {agent.activeJob.rootCategoryName && (
+                    <span className="text-slate-600">
+                      Root:{" "}
+                      <strong className="text-slate-800">
+                        {agent.activeJob.rootCategoryName}
+                      </strong>
+                    </span>
+                  )}
                   <span className="text-slate-700">
                     {agent.activeJob.processed ?? 0} / {agent.activeJob.total ?? 0} processed
                   </span>
@@ -270,6 +292,7 @@ export default function AgentsPage() {
                         <th className="text-right py-2 px-3 text-slate-600 font-semibold">Success</th>
                         <th className="text-right py-2 px-3 text-slate-600 font-semibold">Failed</th>
                         <th className="text-left py-2 px-3 text-slate-600 font-semibold">Started</th>
+                        <th className="text-left py-2 px-3 text-slate-600 font-semibold">Root</th>
                         <th className="text-left py-2 px-3 text-slate-600 font-semibold">Reason</th>
                       </tr>
                     </thead>
@@ -295,6 +318,9 @@ export default function AgentsPage() {
                           <td className="text-right py-2 px-3 text-slate-700">{job.success ?? 0}</td>
                           <td className="text-right py-2 px-3 text-slate-700">{job.failed ?? 0}</td>
                           <td className="py-2 px-3 text-slate-500 text-xs">{formatTime(job.startedAt)}</td>
+                          <td className="py-2 px-3 text-slate-600 text-xs max-w-[140px] truncate" title={job.metadata?.rootCategoryName || ""}>
+                            {job.metadata?.rootCategoryName || "—"}
+                          </td>
                           <td className="py-2 px-3 text-slate-600 text-xs max-w-[200px] truncate" title={job.stopReason || ""}>
                             {job.stopReason || "—"}
                           </td>

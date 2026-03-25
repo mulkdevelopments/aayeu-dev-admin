@@ -1,15 +1,26 @@
 "use client";
 
-import MagicLogin from "@/components/comman/MagicLogin";
-import { useSearchParams } from "next/navigation";
-import React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
+/**
+ * Legacy magic-link URLs (/auth?type=magic-login&token=...) are no longer used.
+ * OTP login happens on the home page.
+ */
 export default function AuthPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const type = searchParams.get("type");
-  return <div>
-    {
-        type === "magic-login" && <MagicLogin />
+
+  useEffect(() => {
+    const type = searchParams.get("type");
+    if (type === "magic-login") {
+      router.replace("/");
     }
-  </div>;
+  }, [router, searchParams]);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center text-gray-600">
+      Redirecting…
+    </div>
+  );
 }

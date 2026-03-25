@@ -1,7 +1,7 @@
 "use client";
 
 import axiosInstance from "@/utils/axiosInstance";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuthUser } from "@/contexts/AuthContext"; // Import AuthContext
 
 export default function useAxios() {
@@ -23,7 +23,7 @@ export default function useAxios() {
    *
    * @returns {Promise<{ data: any, error: string | null }>} - API response data or error
    */
-  const request = async ({
+  const request = useCallback(async ({
     method,
     url,
     payload = null,
@@ -86,7 +86,7 @@ export default function useAxios() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authUser?.token]);
 
   return { request, loading, data, error };
 }
