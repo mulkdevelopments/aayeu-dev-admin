@@ -5,6 +5,7 @@ import {
   Gift,
   Image,
   Layers,
+  Mail,
   Megaphone,
   RectangleHorizontal,
   ShieldCheck,
@@ -80,7 +81,8 @@ export const actions = [
   {
     id: 7,
     title: "Manage Bottom Banner",
-    description: "Curate the footer promotional banner",
+    description:
+      "Bottom strip plus homepage club (left) and newsletter headline (right) panels",
     icon: <Image className="w-6 h-6 text-cyan-600" />,
     color: "bg-cyan-50",
     href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BOTTOM_BANNER,
@@ -93,7 +95,15 @@ export const actions = [
     color: "bg-slate-50",
     href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
   },
-  
+  {
+    id: 9,
+    title: "Club & newsletter panels",
+    description:
+      "Headlines, backgrounds, and optional CTA for the dual homepage panels",
+    icon: <Mail className="w-6 h-6 text-teal-600" />,
+    color: "bg-teal-50",
+    href: `${ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BOTTOM_BANNER}?tab=bottomRight`,
+  },
 ];
 
 export const settingsCards = [
