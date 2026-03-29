@@ -137,6 +137,10 @@ const sidebarRoutes = [
         label: "Manage Brand Groups",
         path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
       },
+      {
+        label: "Brands highlight",
+        path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BRANDS_HIGHLIGHT,
+      },
     ],
   },
   {

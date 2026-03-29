@@ -53,6 +53,7 @@ const ROUTE_OPTIONS = [
   { path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BEST_SELLERS, label: "Manage Best Sellers" },
   { path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS, label: "Manage New Arrivals" },
   { path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS, label: "Manage Brand Groups" },
+  { path: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BRANDS_HIGHLIGHT, label: "Brands highlight" },
   { path: ROUTE_PATH.DASHBOARD.COUNTRIES, label: "Countries" },
   { path: "/dashboard/plugins", label: "Plugins (Vendors)" },
 ];

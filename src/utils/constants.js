@@ -96,6 +96,14 @@ export const actions = [
     href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS,
   },
   {
+    id: 10,
+    title: "Brands highlight",
+    description: "Homepage “Brands of the moment” tiles with images",
+    icon: <Tags className="w-6 h-6 text-emerald-700" />,
+    color: "bg-emerald-50",
+    href: ROUTE_PATH.DASHBOARD.SETTINGS_HOME_CONFIG_MANAGE_BRANDS_HIGHLIGHT,
+  },
+  {
     id: 9,
     title: "Club & newsletter panels",
     description:

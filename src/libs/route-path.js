@@ -46,6 +46,7 @@ export const ROUTE_PATH = {
     SETTINGS_HOME_CONFIG_MANAGE_BEST_SELLERS: "/dashboard/settings/home-config/manage-best-sellers",
     SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS: "/dashboard/settings/home-config/manage-featured-brands",
     SETTINGS_HOME_CONFIG_MANAGE_FEATURED_BRANDS_ADD_NEW_BRANDS: "/dashboard/settings/home-config/manage-featured-brands/addnewbrands",
+    SETTINGS_HOME_CONFIG_MANAGE_BRANDS_HIGHLIGHT: "/dashboard/settings/home-config/manage-brands-highlight",
     SETTINGS_HOME_CONFIG_MANAGE_NEW_ARRIVALS: "/dashboard/settings/home-config/manage-new-arrivals",
     SETTINGS_HOME_ADD_BEST_SELLER: "/dashboard/settings/home-config/manage-best-sellers/addbestseller",
     MARGIN_SETTINGS: "/dashboard/settings/margin-settings",
