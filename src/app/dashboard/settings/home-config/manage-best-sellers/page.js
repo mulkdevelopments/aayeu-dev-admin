@@ -156,7 +156,7 @@ export default function AddBestSeller() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const endpoint = `/admin/get-products?page=1&q=${searchQuery}`;
+        const endpoint = `/admin/get-products?page=1&light=1&q=${searchQuery}`;
         const { data, error } = await request({ method:"GET", url: endpoint, authRequired:true });
 
         if (error) {

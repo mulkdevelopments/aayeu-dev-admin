@@ -174,7 +174,7 @@ export default function NewArrivals() {
       try {
         const { data, error } = await request({
           method: "GET",
-          url: `/admin/get-products?page=1&q=${searchQuery}`,
+          url: `/admin/get-products?page=1&light=1&q=${searchQuery}`,
           authRequired: true,
         });
         if (error) {

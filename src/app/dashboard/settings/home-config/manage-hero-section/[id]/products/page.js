@@ -68,7 +68,7 @@ export default function HeroSlideProductsPage() {
         const req = requestRef.current;
         const { data, error } = await req({
           method: "GET",
-          url: `/admin/get-products?page=1&limit=20&q=${encodeURIComponent(searchQuery)}`,
+          url: `/admin/get-products?page=1&limit=20&light=1&q=${encodeURIComponent(searchQuery)}`,
           authRequired: true,
         });
         if (cancelled) return;

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useAxios from "@/hooks/useAxios";
 import { showToast } from "@/components/_ui/toast-utils";
-import { Loader2, RefreshCw, RotateCcw, Trash2, Plus } from "lucide-react";
+import { Loader2, RefreshCw, RotateCcw, Trash2, Plus, Sparkles, ShieldCheck } from "lucide-react";
 import {
   Table,
   TableHeader,
@@ -49,6 +49,11 @@ export default function DeletedSuspiciousProductsPage() {
   const [newCompetitorName, setNewCompetitorName] = useState("");
   const [addingBlacklist, setAddingBlacklist] = useState(false);
   const [deletingBlacklistId, setDeletingBlacklistId] = useState(null);
+
+  const [qaDryRun, setQaDryRun] = useState(true);
+  const [qaIncludeCategorySoft, setQaIncludeCategorySoft] = useState(false);
+  const [qaRunning, setQaRunning] = useState(false);
+  const [qaResult, setQaResult] = useState(null);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -190,6 +195,31 @@ export default function DeletedSuspiciousProductsPage() {
     }
   }, [bulkSelectedIds.size, products.length]);
 
+  const runQuarantineQa = async () => {
+    setQaRunning(true);
+    setQaResult(null);
+    try {
+      const { data, error } = await request({
+        method: "POST",
+        url: "/admin/quarantine-qa-run",
+        authRequired: true,
+        payload: {
+          dry_run: qaDryRun,
+          include_category_soft_failures: qaIncludeCategorySoft,
+        },
+      });
+      if (error) throw new Error(data?.message || error);
+      setQaResult(data?.data ?? null);
+      const msg = data?.message || "QA run finished";
+      showToast("success", msg);
+      if (!qaDryRun) await fetchList();
+    } catch (err) {
+      showToast("error", err?.message || "QA run failed");
+    } finally {
+      setQaRunning(false);
+    }
+  };
+
   const runBulkRecover = async () => {
     if (bulkActionLoading || bulkSelectedIds.size === 0) return;
     setBulkActionLoading(true);
@@ -297,6 +327,83 @@ export default function DeletedSuspiciousProductsPage() {
                     </button>
                   </Badge>
                 ))
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6 border border-indigo-100 bg-gradient-to-br from-white to-indigo-50/40 shadow-sm">
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-indigo-600" aria-hidden />
+            <CardTitle className="text-base text-slate-900">Quarantine QA agent</CardTitle>
+          </div>
+          <p className="text-sm text-slate-500 font-normal">
+            Scans up to 500 suspicious products (most recent first).{" "}
+            <strong className="font-medium text-slate-700">Competitor rule:</strong> re-checks name, title, and description against the{" "}
+            <em>current</em> blacklist — if nothing matches anymore (e.g. term removed or false positive), those rows are recovered automatically.{" "}
+            <strong className="font-medium text-slate-700">Optional:</strong> also recover products quarantined only for taxonomy / “no matching category” messages when the text is still clean for competitors.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-4 sm:items-center">
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
+                checked={qaDryRun}
+                onChange={(e) => setQaDryRun(e.target.checked)}
+              />
+              <span>Dry run (preview only, no recoveries)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
+                checked={qaIncludeCategorySoft}
+                onChange={(e) => setQaIncludeCategorySoft(e.target.checked)}
+              />
+              <span>Include category-mapping quarantines (no taxonomy match)</span>
+            </label>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="sm"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={runQuarantineQa}
+              disabled={qaRunning}
+            >
+              {qaRunning ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {qaRunning ? "Running…" : qaDryRun ? "Run dry scan" : "Run & recover"}
+            </Button>
+            <span className="text-xs text-slate-500">
+              Name/description mismatch and other AI flags stay manual unless they match the category rules above.
+            </span>
+          </div>
+          {qaResult && (
+            <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm space-y-2">
+              <p className="font-semibold text-slate-800">Last run</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-slate-600">
+                <li>Scanned: {qaResult.scanned ?? "—"}</li>
+                <li>
+                  {qaResult.dry_run ? "Would recover" : "Recovered"}:{" "}
+                  {qaResult.dry_run ? qaResult.recover_count ?? 0 : qaResult.recovered ?? 0}
+                </li>
+                <li>Competitor-cleared: {qaResult.summary?.recover_competitor_cleared ?? 0}</li>
+                <li>Category-soft: {qaResult.summary?.recover_category_soft ?? 0}</li>
+                <li>Skipped (competitor still in text): {qaResult.summary?.skip_competitor_still ?? 0}</li>
+                <li>Skipped (manual review): {qaResult.summary?.skip_manual ?? 0}</li>
+              </ul>
+              {qaResult.details_truncated && (
+                <p className="text-xs text-amber-700">
+                  Detail list truncated in response ({qaResult.details_total} rows); re-run or use logs if needed.
+                </p>
               )}
             </div>
           )}
