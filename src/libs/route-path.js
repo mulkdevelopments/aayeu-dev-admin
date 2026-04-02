@@ -19,6 +19,7 @@ export const ROUTE_PATH = {
     PLUGIN_DETAIL: "/dashboard/plugins/:id",
     ORDERS: "/dashboard/orders",
     REQUEST_ACCESS: "/dashboard/request-access",
+    NEWSLETTER_SUBSCRIBERS: "/dashboard/newsletter-subscribers",
     INVENTORIES: "/dashboard/inventories",
     DELETED_SUSPICIOUS_PRODUCTS: "/dashboard/inventories/deleted-suspicious",
     VIEW_PRODUCT: "/dashboard/inventories/viewproduct/:id",

@@ -23,6 +23,7 @@ import {
   Plug,
   KeyRound,
   Bell,
+  Mail,
   AlertTriangle,
   Bot,
   Shield,
@@ -53,6 +54,11 @@ const sidebarRoutes = [
     label: "Request Access",
     path: ROUTE_PATH.DASHBOARD.REQUEST_ACCESS,
     icon: <KeyRound size={18} />,
+  },
+  {
+    label: "Newsletter subscribers",
+    path: ROUTE_PATH.DASHBOARD.NEWSLETTER_SUBSCRIBERS,
+    icon: <Mail size={18} />,
   },
   {
     label: "Inventory",

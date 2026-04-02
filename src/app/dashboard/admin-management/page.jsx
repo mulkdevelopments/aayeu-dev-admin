@@ -40,6 +40,7 @@ const ROUTE_OPTIONS = [
   { path: ROUTE_PATH.DASHBOARD.ORDERS, label: "Orders" },
   { path: ROUTE_PATH.DASHBOARD.STOCK_NOTIFY, label: "Stock Notifications" },
   { path: ROUTE_PATH.DASHBOARD.REQUEST_ACCESS, label: "Request Access" },
+  { path: ROUTE_PATH.DASHBOARD.NEWSLETTER_SUBSCRIBERS, label: "Newsletter subscribers" },
   { path: ROUTE_PATH.DASHBOARD.INVENTORIES, label: "Inventory" },
   { path: ROUTE_PATH.DASHBOARD.DELETED_SUSPICIOUS_PRODUCTS, label: "Quarantine" },
   { path: ROUTE_PATH.DASHBOARD.CATEGORY_MANAGEMENT, label: "Categories" },
