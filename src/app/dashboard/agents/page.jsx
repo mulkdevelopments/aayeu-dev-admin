@@ -185,6 +185,14 @@ export default function AgentsPage() {
                         Open Inventory <ExternalLink className="h-3 w-3" />
                       </Link>
                     )}
+                    {agent.id === "product_name_rewrite" && (
+                      <Link
+                        href={ROUTE_PATH.DASHBOARD.INVENTORIES}
+                        className="text-xs text-slate-600 hover:text-slate-900 inline-flex items-center gap-1"
+                      >
+                        Open Inventory <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    )}
                     {agent.id === "category_remap" && (
                       <Link
                         href="/dashboard/settings/category-mapping"

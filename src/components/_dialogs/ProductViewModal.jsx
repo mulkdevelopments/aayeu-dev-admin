@@ -32,6 +32,19 @@ const getConfidenceBadgeColor = (confidence) => {
   return "bg-orange-500";
 };
 
+function parseProductMeta(raw) {
+  if (raw == null) return {};
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw || "{}");
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
 const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDeleted }) => {
   const { request } = useAxios();
   const [product, setProduct] = useState(null);
@@ -518,6 +531,62 @@ const ProductViewModal = ({ open, onClose, productId, onDeleteSuccess, includeDe
             <>
               <DialogHeader className="pb-4">
                 <DialogTitle className="text-xl font-bold pr-8">{product.name}</DialogTitle>
+                {(() => {
+                  const meta = parseProductMeta(product.product_meta);
+                  const vendorOriginalName = meta.storefront_vendor_original_name;
+                  const vendorOriginalTitle = meta.storefront_vendor_original_title;
+                  const nameSkipped = meta.storefront_name_skip === true;
+                  const skipReason =
+                    typeof meta.storefront_name_skip_reason === "string"
+                      ? meta.storefront_name_skip_reason.trim()
+                      : "";
+
+                  if (nameSkipped) {
+                    return (
+                      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Name rewrite (skipped)
+                        </p>
+                        <p className="mt-1 text-slate-800">
+                          Vendor name and our storefront name are the same.
+                        </p>
+                        <p className="mt-0.5 font-medium text-slate-900">{product.name}</p>
+                        {skipReason ? (
+                          <p className="mt-2 text-slate-600">
+                            <span className="font-medium text-slate-700">Reason:</span> {skipReason}
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  }
+
+                  if (vendorOriginalName && String(vendorOriginalName).trim()) {
+                    return (
+                      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Storefront name
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">{product.name}</p>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Vendor name (before rewrite)
+                        </p>
+                        <p className="mt-1 text-slate-600">{String(vendorOriginalName).trim()}</p>
+                        {vendorOriginalTitle &&
+                        String(vendorOriginalTitle).trim() &&
+                        String(vendorOriginalTitle).trim() !== (product.title || "").trim() ? (
+                          <>
+                            <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Vendor title (before rewrite)
+                            </p>
+                            <p className="mt-1 text-slate-600">{String(vendorOriginalTitle).trim()}</p>
+                          </>
+                        ) : null}
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
               </DialogHeader>
 
               {isEditingProduct && (
