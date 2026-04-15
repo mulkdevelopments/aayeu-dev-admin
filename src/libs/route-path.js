@@ -52,6 +52,7 @@ export const ROUTE_PATH = {
     SETTINGS_HOME_ADD_BEST_SELLER: "/dashboard/settings/home-config/manage-best-sellers/addbestseller",
     MARGIN_SETTINGS: "/dashboard/settings/margin-settings",
     ADMIN_MANAGEMENT: "/dashboard/admin-management",
+    SIZE_NORMALIZATION: "/dashboard/size-normalization",
   },
 };
 

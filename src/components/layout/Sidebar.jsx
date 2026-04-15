@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   Bot,
   Shield,
+  Ruler,
 } from "lucide-react";
 
 const sidebarRoutes = [
@@ -79,6 +80,11 @@ const sidebarRoutes = [
     label: "Agents",
     path: ROUTE_PATH.DASHBOARD.AGENTS,
     icon: <Bot size={18} />,
+  },
+  {
+    label: "Size Normalization",
+    path: ROUTE_PATH.DASHBOARD.SIZE_NORMALIZATION,
+    icon: <Ruler size={18} />,
   },
   // {
   //   label: "Reports",
